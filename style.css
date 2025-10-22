@@ -1,0 +1,57 @@
+/**
+ * Theme Name:     Astra Child
+ * Author:         Brainstorm Force
+ * Template:       astra
+ * Text Domain:	   astra-child
+ * Description:    The Astra WordPress theme is lightning-fast and highly customizable. It has over 1 million downloads and the only theme in the world with 5,700+ five-star reviews! It’s ideal for professional web designers, solopreneurs, small businesses, eCommerce, membership sites and any type of website. It offers special features and templates so it works perfectly with all page builders like Spectra, Elementor, Beaver Builder, etc. Fast performance, clean code, mobile-first design and schema markup are all built-in, making the theme exceptionally SEO-friendly. It’s fully compatible with WooCommerce, SureCart and other eCommerce plugins and comes with lots of store-friendly features and templates. Astra also provides expert support for free users. A dedicated team of fully trained WordPress experts are on hand to help with every aspect of the theme. Try the live demo of Astra: https://zipwp.org/themes/astra/
+ */
+
+
+ /* Reset for auth pages */
+body.page-template-template-login,
+body.page-template-template-register,
+body.page-template-template-forgot-password,
+body.page-template-template-reset-password {
+    margin: 0;
+    padding: 0;
+}
+
+body.page-template-template-login #main-content,
+body.page-template-template-register #main-content,
+body.page-template-template-forgot-password #main-content,
+body.page-template-template-reset-password #main-content {
+    padding: 0;
+    margin: 0;
+}
+
+/* Hide header/footer on auth pages */
+body.no-header-footer header,
+body.no-header-footer footer,
+body.no-header-footer .site-header,
+body.no-header-footer .site-footer {
+    display: none !important;
+}
+
+body.no-header-footer {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+
+@media (max-width: 768px) {
+    .auth-box {
+        padding: 30px 20px !important;
+    }
+    
+    .auth-container {
+        padding: 20px 15px !important;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr !important;
+    }
+    
+    .auth-logo {
+        font-size: 28px !important;
+    }
+}
