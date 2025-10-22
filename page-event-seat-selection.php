@@ -758,8 +758,8 @@ get_header();
 
 .zoom-controls {
     position: fixed;
-    bottom: 100px;
-    right: 420px;
+    bottom: 20px;
+    right: 50%;
     display: flex;
     gap: 8px;
     z-index: 100;

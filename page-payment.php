@@ -42,24 +42,18 @@ get_header();
 <div class="payment-page-wrapper">
     <div class="payment-header">
         <button class="back-btn" onclick="history.back()">
-            <span>←</span> 525 Lighthouse Ave, Pacific Grove, CA
+            <span>←</span> <span class="location-text">RANCHO SANTA MARGARITA</span>
         </button>
         
         <div class="cinema-logo">
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>"><h2>Adeebdds</h2></a>
+            <a href="<?php echo esc_url( home_url( '/' ) ); ?>">
+                <h2>cinépolis</h2>
+            </a>
         </div>
         
         <button class="close-btn" onclick="window.location.href='<?php echo home_url('/movies'); ?>'">
             ✕
         </button>
-        
-        <div class="tickets-summary">
-            <span class="ticket-icon">🎫</span>
-            <span>TICKETS</span>
-            <span><?php echo $total_tickets; ?> tickets · $<?php echo number_format($total, 2); ?></span>
-            <input type="text" placeholder="Add Gift Card, Voucher, Promo Code" class="promo-header-input">
-            <button class="btn-apply-header">APPLY</button>
-        </div>
     </div>
     
     <div class="progress-steps">
@@ -80,18 +74,18 @@ get_header();
     <div class="payment-container">
         <div class="payment-main">
             <!-- Pricing Section -->
-            <div class="payment-section">
+            <div class="payment-section pricing-section">
                 <div class="section-header">
                     <span class="section-icon">$</span>
                     <h3>PRICING</h3>
                 </div>
                 
-                <div class="pricing-content">
+                <div class="section-content">
                     <div class="pricing-row">
                         <span>Booking Fee</span>
                         <span>$<?php echo number_format($booking_fee, 2); ?></span>
                     </div>
-                    <div class="pricing-row total">
+                    <div class="pricing-row total-row">
                         <span>Total</span>
                         <span>$<?php echo number_format($total, 2); ?></span>
                     </div>
@@ -121,13 +115,13 @@ get_header();
             </div>
             
             <!-- Credit Card Section -->
-            <div class="payment-section">
+            <div class="payment-section collapsed">
                 <div class="section-header collapsible">
                     <span class="section-icon">💳</span>
                     <h3>Add Default Credit Card</h3>
                     <button class="expand-btn">+</button>
                 </div>
-                <div class="section-content">
+                <div class="section-content" style="display: none;">
                     <form id="payment-form">
                         <div class="payment-method-tabs">
                             <button type="button" class="tab-btn active" data-method="card">
@@ -142,12 +136,12 @@ get_header();
                         </div>
                         
                         <div class="form-group">
-                            <label>Card information</label>
+                            <label>CARD INFORMATION</label>
                             <div id="card-element" class="stripe-input"></div>
                         </div>
                         
                         <div class="form-group">
-                            <label>Country</label>
+                            <label>COUNTRY</label>
                             <select id="country" class="form-input">
                                 <option value="BD">Bangladesh</option>
                                 <option value="US">United States</option>
@@ -169,6 +163,17 @@ get_header();
         
         <!-- Right Sidebar -->
         <aside class="payment-sidebar">
+            <div class="sidebar-ticket-info">
+                <div class="ticket-header">
+                    <span class="ticket-icon">🎫</span>
+                    <span class="ticket-label">TICKETS</span>
+                </div>
+                <div class="ticket-details">
+                    <span><?php echo $total_tickets; ?> ticket<?php echo $total_tickets > 1 ? 's' : ''; ?></span>
+                    <span class="ticket-price">$<?php echo number_format($total, 2); ?></span>
+                </div>
+            </div>
+            
             <div class="sidebar-promo">
                 <input type="text" placeholder="Add Gift Card, Voucher, Promo Code" class="promo-sidebar-input">
                 <button class="btn-apply-sidebar">APPLY</button>
@@ -190,11 +195,11 @@ jQuery(document).ready(function($) {
     const cardElement = elements.create('card', {
         style: {
             base: {
-                fontSize: '16px',
-                color: '#32325d',
+                fontSize: '14px',
+                color: '#333',
                 fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
                 '::placeholder': {
-                    color: '#aab7c4'
+                    color: '#aaa'
                 }
             },
             invalid: {
@@ -469,26 +474,30 @@ jQuery(document).ready(function($) {
 </script>
 
 <style>
-/* Copy all CSS from the second code - keeping it exactly the same */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
 }
 
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background: #fff;
+}
+
 .payment-page-wrapper {
-    background: #f5f5f5;
+    background: #fff;
     min-height: 100vh;
 }
 
+/* Header */
 .payment-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px 30px;
+    padding: 20px 40px;
     background: white;
-    border-bottom: 1px solid #e0e0e0;
-    position: relative;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .back-btn, .close-btn {
@@ -497,68 +506,46 @@ jQuery(document).ready(function($) {
     font-size: 16px;
     cursor: pointer;
     color: #666;
-}
-
-.back-btn {
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 8px;
 }
 
-.cinema-logo h2 {
-    font-size: 24px;
-    text-transform: lowercase;
+.back-btn:hover, .close-btn:hover {
     color: #333;
-    font-weight: 600;
 }
 
-.tickets-summary {
-    position: absolute;
-    right: 80px;
-    top: 50%;
-    transform: translateY(-50%);
-    display: flex;
-    align-items: center;
-    gap: 15px;
+.location-text {
     font-size: 14px;
 }
 
-.ticket-icon {
-    font-size: 18px;
+.cinema-logo h2 {
+    font-size: 28px;
+    color: #333;
+    font-weight: 400;
+    font-style: italic;
 }
 
-.promo-header-input {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 13px;
-    width: 250px;
+.cinema-logo a {
+    text-decoration: none;
+    color: inherit;
 }
 
-.btn-apply-header {
-    padding: 8px 16px;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-}
-
+/* Progress Steps */
 .progress-steps {
     display: flex;
     justify-content: center;
-    gap: 100px;
-    padding: 25px;
+    gap: 80px;
+    padding: 30px;
     background: white;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .step {
     display: flex;
     flex-direction: column;
     align-items: center;
-    opacity: 0.4;
+    opacity: 0.3;
 }
 
 .step.active, .step.completed {
@@ -566,58 +553,64 @@ jQuery(document).ready(function($) {
 }
 
 .step-number {
-    width: 32px;
-    height: 32px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    background: #d0d0d0;
+    background: #e0e0e0;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
     font-weight: 600;
     font-size: 14px;
+    color: #999;
 }
 
 .step.active .step-number {
-    background: #666;
+    background: #333;
     color: white;
 }
 
 .step.completed .step-number {
-    background: #666;
+    background: #333;
     color: white;
 }
 
 .step-label {
-    font-size: 13px;
+    font-size: 14px;
+    color: #666;
 }
 
+/* Main Container */
 .payment-container {
     display: grid;
     grid-template-columns: 1fr 420px;
     max-width: 1400px;
     margin: 0 auto;
-    gap: 0;
+    min-height: calc(100vh - 200px);
 }
 
 .payment-main {
     background: white;
+    border-right: 1px solid #e5e5e5;
 }
 
+/* Payment Sections */
 .payment-section {
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #e5e5e5;
 }
 
 .section-header {
     display: flex;
     align-items: center;
-    gap: 15px;
-    padding: 25px 40px;
+    gap: 12px;
+    padding: 24px 40px;
     background: #fafafa;
 }
 
 .section-header.collapsible {
     cursor: pointer;
+    transition: background 0.2s;
 }
 
 .section-header.collapsible:hover {
@@ -625,51 +618,60 @@ jQuery(document).ready(function($) {
 }
 
 .section-icon {
-    font-size: 20px;
+    font-size: 18px;
 }
 
 .section-header h3 {
     flex: 1;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
-    letter-spacing: 0.5px;
+    letter-spacing: 1px;
+    color: #333;
 }
 
 .expand-btn {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
     color: #666;
-    padding: 5px 10px;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .section-content {
     padding: 30px 40px;
 }
 
-.pricing-content {
-    padding: 20px 40px;
+/* Pricing Section */
+.pricing-section .section-content {
+    padding: 24px 40px 30px;
 }
 
 .pricing-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 15px;
+    margin-bottom: 16px;
     font-size: 15px;
+    color: #666;
 }
 
-.pricing-row.total {
-    padding-top: 15px;
-    border-top: 1px solid #e0e0e0;
-    margin-top: 10px;
-    font-size: 17px;
+.pricing-row.total-row {
+    padding-top: 16px;
+    border-top: 1px solid #e5e5e5;
+    margin-top: 8px;
+    font-size: 16px;
     font-weight: 700;
+    color: #333;
 }
 
 .terms-checkbox {
-    margin-top: 20px;
-    font-size: 14px;
+    margin-top: 24px;
+    font-size: 13px;
 }
 
 .terms-checkbox label {
@@ -677,13 +679,15 @@ jQuery(document).ready(function($) {
     align-items: start;
     gap: 10px;
     cursor: pointer;
+    color: #666;
 }
 
 .terms-checkbox input[type="checkbox"] {
-    margin-top: 3px;
-    width: 18px;
-    height: 18px;
+    margin-top: 2px;
+    width: 16px;
+    height: 16px;
     cursor: pointer;
+    flex-shrink: 0;
 }
 
 .terms-checkbox a {
@@ -691,6 +695,11 @@ jQuery(document).ready(function($) {
     text-decoration: none;
 }
 
+.terms-checkbox a:hover {
+    text-decoration: underline;
+}
+
+/* Promo Form */
 .promo-form {
     display: flex;
     gap: 10px;
@@ -698,20 +707,33 @@ jQuery(document).ready(function($) {
 
 .promo-input {
     flex: 1;
-    padding: 12px;
+    padding: 12px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.promo-input:focus {
+    outline: none;
+    border-color: #0066cc;
 }
 
 .btn-apply {
     padding: 12px 24px;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 6px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
 }
 
+.btn-apply:hover {
+    background: #ebebeb;
+}
+
+/* Payment Method Tabs */
 .payment-method-tabs {
     display: flex;
     gap: 10px;
@@ -720,42 +742,47 @@ jQuery(document).ready(function($) {
 
 .tab-btn {
     flex: 1;
-    padding: 12px;
+    padding: 14px;
     border: 1px solid #ddd;
     background: white;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
+    font-size: 14px;
+    transition: all 0.2s;
 }
 
 .tab-btn.active {
     border-color: #0066cc;
     background: #f0f7ff;
+    color: #0066cc;
 }
 
 .card-icon {
     font-size: 18px;
 }
 
+/* Stripe Info */
 .stripe-info {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px;
+    padding: 12px 16px;
     background: #f0f7ff;
-    border-radius: 6px;
-    margin-bottom: 20px;
-    font-size: 14px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    font-size: 13px;
     color: #0066cc;
 }
 
 .lock-icon {
-    font-size: 16px;
+    font-size: 14px;
 }
 
+/* Form Groups */
 .form-group {
     margin-bottom: 20px;
 }
@@ -763,23 +790,27 @@ jQuery(document).ready(function($) {
 .form-group label {
     display: block;
     margin-bottom: 8px;
-    font-weight: 500;
-    font-size: 14px;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: #666;
+    text-transform: uppercase;
 }
 
 .stripe-input {
-    padding: 14px;
+    padding: 14px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     background: white;
 }
 
 .form-input {
     width: 100%;
-    padding: 14px;
+    padding: 14px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 14px;
+    background: white;
 }
 
 .form-input:focus {
@@ -790,24 +821,25 @@ jQuery(document).ready(function($) {
 .error-message {
     color: #fa755a;
     font-size: 13px;
-    margin-top: 10px;
+    margin-top: 8px;
 }
 
+/* Pay Button */
 .btn-pay {
     width: 100%;
     padding: 16px;
     background: #4A90E2;
     color: white;
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 15px;
+    font-size: 14px;
     letter-spacing: 0.5px;
     transition: background 0.3s;
 }
 
-.btn-pay:hover {
+.btn-pay:hover:not(:disabled) {
     background: #357ABD;
 }
 
@@ -818,48 +850,100 @@ jQuery(document).ready(function($) {
 
 .spinner {
     display: inline-block;
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     border: 2px solid #fff;
     border-top-color: transparent;
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
 }
 
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
+/* Sidebar */
 .payment-sidebar {
-    background: #f9f9f9;
+    background: #fafafa;
     padding: 40px 30px;
-    border-left: 1px solid #e0e0e0;
+}
+
+.sidebar-ticket-info {
+    background: white;
+    padding: 20px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border: 1px solid #e5e5e5;
+}
+
+.ticket-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #666;
+}
+
+.ticket-icon {
+    font-size: 16px;
+}
+
+.ticket-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: #333;
+}
+
+.ticket-price {
+    font-weight: 600;
+    font-size: 16px;
 }
 
 .sidebar-promo {
     background: white;
     padding: 20px;
-    border-radius: 8px;
+    border-radius: 4px;
+    border: 1px solid #e5e5e5;
 }
 
 .promo-sidebar-input {
     width: 100%;
-    padding: 12px;
+    padding: 12px 16px;
     border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 10px;
+    border-radius: 4px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.promo-sidebar-input:focus {
+    outline: none;
+    border-color: #0066cc;
 }
 
 .btn-apply-sidebar {
     width: 100%;
     padding: 12px;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 6px;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
 }
 
+.btn-apply-sidebar:hover {
+    background: #ebebeb;
+}
+
+/* Modal */
 .modal {
     position: fixed;
     top: 0;
@@ -884,11 +968,12 @@ jQuery(document).ready(function($) {
 .modal-content {
     position: relative;
     background: white;
-    border-radius: 12px;
+    border-radius: 8px;
     padding: 40px;
     text-align: center;
     max-width: 500px;
     z-index: 1;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
 }
 
 .success-icon {
@@ -907,28 +992,41 @@ jQuery(document).ready(function($) {
 .modal-content h3 {
     font-size: 24px;
     margin-bottom: 10px;
+    color: #333;
 }
 
 .modal-content p {
     color: #666;
     margin-bottom: 20px;
+    font-size: 15px;
 }
 
 .booking-ref {
     background: #f5f5f5;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
+    padding: 16px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+    font-size: 14px;
+    color: #333;
+}
+
+.booking-ref strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12px;
+    color: #666;
 }
 
 .btn-primary, .btn-secondary {
     width: 100%;
     padding: 14px;
     border: none;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
     font-weight: 600;
-    margin-bottom: 10px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    transition: all 0.2s;
 }
 
 .btn-primary {
@@ -936,11 +1034,21 @@ jQuery(document).ready(function($) {
     color: white;
 }
 
-.btn-secondary {
-    background: #f0f0f0;
-    color: #333;
+.btn-primary:hover {
+    background: #0052a3;
 }
 
+.btn-secondary {
+    background: #f5f5f5;
+    color: #333;
+    border: 1px solid #ddd;
+}
+
+.btn-secondary:hover {
+    background: #ebebeb;
+}
+
+/* Notifications */
 .notifications-container {
     position: fixed;
     top: 20px;
@@ -951,7 +1059,7 @@ jQuery(document).ready(function($) {
 .notification {
     background: white;
     padding: 16px 20px;
-    border-radius: 8px;
+    border-radius: 4px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     margin-bottom: 10px;
     display: flex;
@@ -960,6 +1068,7 @@ jQuery(document).ready(function($) {
     transform: translateX(400px);
     opacity: 0;
     transition: all 0.3s;
+    min-width: 300px;
 }
 
 .notification.show {
@@ -981,17 +1090,55 @@ jQuery(document).ready(function($) {
     font-size: 20px;
     cursor: pointer;
     color: #999;
+    padding: 0;
+    line-height: 1;
 }
 
+.notification button:hover {
+    color: #666;
+}
+
+/* Responsive Design */
 @media (max-width: 1024px) {
     .payment-container {
         grid-template-columns: 1fr;
     }
     
-    .tickets-summary {
-        position: static;
-        transform: none;
-        margin-top: 15px;
+    .payment-main {
+        border-right: none;
+    }
+    
+    .payment-sidebar {
+        border-top: 1px solid #e5e5e5;
+    }
+}
+
+@media (max-width: 768px) {
+    .payment-header {
+        padding: 15px 20px;
+    }
+    
+    .location-text {
+        display: none;
+    }
+    
+    .cinema-logo h2 {
+        font-size: 24px;
+    }
+    
+    .progress-steps {
+        gap: 40px;
+        padding: 20px;
+    }
+    
+    .section-header,
+    .section-content,
+    .pricing-section .section-content {
+        padding: 20px;
+    }
+    
+    .payment-sidebar {
+        padding: 20px;
     }
 }
 </style>

@@ -1350,9 +1350,11 @@ add_action('wp_enqueue_scripts', 'cinema_enqueue_scripts');
  * STRIPE CONFIGURATION
  * ========================================================================
  */
-define('STRIPE_PUBLISHABLE_KEY', 'STRIPE_PUBLISHABLE_KEY');
-define('STRIPE_SECRET_KEY', 'STRIPE_SECRET_KEY');
-define('STRIPE_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_KEY');
+// define('STRIPE_PUBLISHABLE_KEY', 'STRIPE_PUBLISHABLE_KEY');
+// define('STRIPE_SECRET_KEY', 'STRIPE_SECRET_KEY');
+// define('STRIPE_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_KEY');
+
+
 
 require_once get_stylesheet_directory() . '/includes/vendor/autoload.php';
 \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);

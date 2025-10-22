@@ -53,50 +53,51 @@ get_header();
     <div class="cart-top-header">
         <button class="back-link" onclick="history.back()">
             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/>
+                <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
             </svg>
             <span>525 Lighthouse Ave, Pacific Grove, CA</span>
         </button>
-        
+
         <div class="cart-logo">
             <a href="<?php echo esc_url(home_url('/')); ?>">
                 <h1>cinépolis</h1>
             </a>
         </div>
-        
+
         <button class="close-cart-btn" onclick="window.location.href='<?php echo home_url('/movies'); ?>'">
             <svg width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                <path
+                    d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
             </svg>
         </button>
     </div>
-    
+
     <!-- Progress Bar -->
     <div class="progress-bar-section">
         <div class="progress-step completed">
             <div class="step-circle">
                 <svg width="16" height="16" fill="white" viewBox="0 0 24 24">
-                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                    <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" />
                 </svg>
             </div>
             <span class="step-text">Seats</span>
         </div>
-        
+
         <div class="progress-line completed"></div>
-        
+
         <div class="progress-step active">
             <div class="step-circle">2</div>
             <span class="step-text">Cart</span>
         </div>
-        
+
         <div class="progress-line"></div>
-        
+
         <div class="progress-step">
             <div class="step-circle">3</div>
             <span class="step-text">Payment</span>
         </div>
     </div>
-    
+
     <!-- Main Content -->
     <div class="cart-content-wrapper">
         <div class="cart-left-panel">
@@ -105,7 +106,8 @@ get_header();
                 <button class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-left">
                         <svg class="section-icon" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                            <path
+                                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
                         </svg>
                         <div>
                             <h3>REDEMPTIONS AVAILABLE</h3>
@@ -113,30 +115,32 @@ get_header();
                         </div>
                     </div>
                     <svg class="chevron-icon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                        <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
                     </svg>
                 </button>
             </div>
-            
+
             <!-- Tickets Section -->
             <div class="cart-accordion-section active">
                 <button class="accordion-header" onclick="toggleAccordion(this)">
                     <div class="accordion-left">
                         <svg class="section-icon" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M22 10V6c0-1.11-.9-2-2-2H4c-1.11 0-2 .89-2 2v4c1.11 0 2 .89 2 2s-.89 2-2 2v4c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2v-4c-1.11 0-2-.89-2-2s.89-2 2-2z"/>
+                            <path
+                                d="M22 10V6c0-1.11-.9-2-2-2H4c-1.11 0-2 .89-2 2v4c1.11 0 2 .89 2 2s-.89 2-2 2v4c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2v-4c-1.11 0-2-.89-2-2s.89-2 2-2z" />
                         </svg>
                         <div>
                             <h3>TICKETS</h3>
                         </div>
                     </div>
                     <div class="accordion-right">
-                        <span class="tickets-summary"><?php echo $total_tickets; ?> tickets - $<?php echo number_format($total, 2); ?></span>
+                        <span class="tickets-summary"><?php echo $total_tickets; ?> tickets -
+                            $<?php echo number_format($total, 2); ?></span>
                         <svg class="chevron-icon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z"/>
+                            <path d="M16.59 8.59L12 13.17 7.41 8.59 6 10l6 6 6-6z" />
                         </svg>
                     </div>
                 </button>
-                
+
                 <div class="accordion-content">
                     <?php foreach ($grouped_items as $group) : 
                         $showtime_id = $group['showtime_id'];
@@ -147,7 +151,7 @@ get_header();
                         if ($is_event) {
                             $event_id = get_post_meta($showtime_id, '_event_showtime_event_id', true);
                             $title = get_the_title($event_id);
-                            $thumbnail = get_the_post_thumbnail_url($event_id, 'thumbnail');
+                            $thumbnail = get_post_meta($event_id, '_event_thumbnail', true);
                             $venue = get_post_meta($event_id, '_event_venue', true);
                             $show_date = get_post_meta($showtime_id, '_event_showtime_date', true);
                             $show_time = get_post_meta($showtime_id, '_event_showtime_time', true);
@@ -155,7 +159,7 @@ get_header();
                         } else {
                             $movie_id = get_post_meta($showtime_id, '_showtime_movie_id', true);
                             $title = get_the_title($movie_id);
-                            $thumbnail = get_the_post_thumbnail_url($movie_id, 'thumbnail');
+                            $thumbnail = get_post_meta($movie_id, '_movie_trailer_banner', true);
                             $show_date = get_post_meta($showtime_id, '_showtime_date', true);
                             $show_time = get_post_meta($showtime_id, '_showtime_time', true);
                             $screen = get_post_meta($showtime_id, '_showtime_screen', true);
@@ -167,30 +171,55 @@ get_header();
                     <div class="movie-booking-group">
                         <button class="movie-group-header" onclick="toggleMovieGroup(this)">
                             <div class="movie-info-section">
-                                <?php if ($thumbnail) : ?>
-                                    <img src="<?php echo esc_url($thumbnail); ?>" alt="<?php echo esc_attr($title); ?>" class="movie-thumbnail">
-                                <?php endif; ?>
+                                <div class="movie-thumbnail-wrapper">
+                                    <?php
+                                    if (!empty($thumbnail)) {
+                                        // Determine which ID to use for alt text
+                                        $alt_title = $is_event ? get_the_title($event_id) : get_the_title($movie_id);
+                                        
+                                        // Check if thumbnail is an attachment ID or URL
+                                        if (is_numeric($thumbnail)) {
+                                            // It's an attachment ID - use wp_get_attachment_image
+                                            echo wp_get_attachment_image(
+                                                (int) $thumbnail,
+                                                'medium',
+                                                false,
+                                                array(
+                                                    'class' => 'movie-poster-img', 
+                                                    'alt' => esc_attr($alt_title)
+                                                )
+                                            );
+                                        } else {
+                                            // It's a direct URL
+                                            $banner_url = esc_url($thumbnail);
+                                            echo '<img src="' . $banner_url . '" class="movie-poster-img" alt="' . esc_attr($alt_title) . '">';
+                                        }
+                                    }
+                                    ?>
+                                </div>
                                 <div class="movie-details">
                                     <h4 class="movie-title"><?php echo esc_html($title); ?></h4>
                                     <p class="movie-datetime"><?php echo esc_html($formatted_date); ?></p>
                                     <p class="movie-location">
                                         <svg width="14" height="14" fill="currentColor" viewBox="0 0 24 24">
-                                            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                                            <path
+                                                d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z" />
                                         </svg>
                                         <?php echo esc_html($location_text); ?>
                                     </p>
                                 </div>
                             </div>
                             <svg class="collapse-icon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z"/>
+                                <path d="M12 8l-6 6 1.41 1.41L12 10.83l4.59 4.58L18 14z" />
                             </svg>
                         </button>
-                        
+
                         <div class="tickets-list-container">
                             <?php 
                             // Group tickets by type
                             $tickets_by_type = array();
                             foreach ($items as $item) {
+                                // echo json_encode($item);
                                 $type = $is_event ? 'Event Ticket' : (isset($item['ticket_type']) ? $item['ticket_type'] : 'Adult');
                                 if (!isset($tickets_by_type[$type])) {
                                     $tickets_by_type[$type] = array(
@@ -210,12 +239,16 @@ get_header();
                                 <div class="ticket-type-header">
                                     <div class="ticket-type-info">
                                         <h5><?php echo esc_html($type); ?></h5>
-                                        <p class="seat-numbers">Seat<?php echo $ticket_count > 1 ? 's' : ''; ?> <?php echo implode(', ', $seats); ?></p>
+                                        <p class="seat-numbers">Seat<?php echo $ticket_count > 1 ? 's' : ''; ?>
+                                            <?php echo implode(', ', $seats); ?></p>
                                     </div>
                                     <div class="ticket-type-actions">
-                                        <button class="remove-ticket-btn" data-seats="<?php echo implode(',', $seats); ?>" data-showtime="<?php echo $showtime_id; ?>">
+                                        <button class="remove-ticket-btn"
+                                            data-seats="<?php echo implode(',', $seats); ?>"
+                                            data-showtime="<?php echo $showtime_id; ?>">
                                             <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                                                <path
+                                                    d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />
                                             </svg>
                                         </button>
                                         <span class="ticket-quantity"><?php echo $ticket_count; ?></span>
@@ -223,7 +256,7 @@ get_header();
                                 </div>
                                 <div class="ticket-type-price">$<?php echo number_format($total_price, 2); ?></div>
                             </div>
-                            
+
                             <?php if ($type !== 'Event Ticket') : ?>
                             <div class="ticket-type-breakdown">
                                 <?php foreach ($data['tickets'] as $ticket) : ?>
@@ -241,17 +274,18 @@ get_header();
                 </div>
             </div>
         </div>
-        
+
         <!-- Right Sidebar -->
         <div class="cart-right-panel">
             <div class="pricing-card">
                 <div class="pricing-card-header">
                     <svg width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/>
+                        <path
+                            d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z" />
                     </svg>
                     <h3>PRICING</h3>
                 </div>
-                
+
                 <div class="pricing-breakdown">
                     <div class="pricing-item">
                         <span>Subtotal</span>
@@ -266,14 +300,15 @@ get_header();
                         <span>$<?php echo number_format($total, 2); ?></span>
                     </div>
                 </div>
-                
+
                 <div class="promo-code-section">
                     <div class="promo-input-wrapper">
-                        <input type="text" placeholder="Add Gift Card, Voucher, Promo Code" class="promo-input" id="promo-code">
+                        <input type="text" placeholder="Add Gift Card, Voucher, Promo Code" class="promo-input"
+                            id="promo-code">
                         <button class="apply-promo-btn">APPLY</button>
                     </div>
                 </div>
-                
+
                 <button class="next-payment-btn" id="proceed-payment">
                     NEXT: PAYMENT
                 </button>
@@ -510,13 +545,24 @@ body {
 }
 
 .movie-group-header:hover {
-    background: #fafafa;
+    background: none;
 }
 
 .movie-info-section {
     display: flex;
     gap: 16px;
     align-items: flex-start;
+}
+
+.movie-thumbnail-wrapper {
+    width: 200px;
+    height: 100px;
+    flex-shrink: 0;
+}
+
+.movie-poster-img{
+    height: 118px;
+    width: 300px;
 }
 
 .movie-thumbnail {
@@ -528,6 +574,7 @@ body {
 
 .movie-details {
     text-align: left;
+    align-self: center;
 }
 
 .movie-title {
@@ -562,7 +609,7 @@ body {
 
 /* Tickets List */
 .tickets-list-container {
-    padding: 0 32px 20px 108px;
+    padding: 0px 10px;
 }
 
 .movie-booking-group.collapsed .tickets-list-container {
@@ -638,7 +685,7 @@ body {
 }
 
 .individual-ticket {
-    display: flex;
+    display: none;
     justify-content: space-between;
     padding: 8px 0;
     font-size: 13px;
@@ -659,7 +706,7 @@ body {
     background: white;
     border-radius: 8px;
     padding: 24px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     position: sticky;
     top: 20px;
 }
@@ -770,11 +817,11 @@ body {
     .cart-content-wrapper {
         grid-template-columns: 1fr;
     }
-    
+
     .cart-right-panel {
         border-top: 1px solid #e5e5e5;
     }
-    
+
     .pricing-card {
         position: static;
     }
@@ -784,29 +831,29 @@ body {
     .cart-top-header {
         padding: 12px 16px;
     }
-    
+
     .back-link span {
         display: none;
     }
-    
+
     .progress-bar-section {
         padding: 20px 16px;
         gap: 20px;
     }
-    
+
     .progress-line {
         width: 40px;
     }
-    
+
     .accordion-header,
     .movie-group-header {
         padding: 16px;
     }
-    
+
     .tickets-list-container {
         padding: 0 16px 16px 76px;
     }
-    
+
     .cart-right-panel {
         padding: 20px 16px;
     }
@@ -826,18 +873,18 @@ function toggleMovieGroup(button) {
 
 jQuery(document).ready(function($) {
     'use strict';
-    
+
     // Remove ticket
     $('.remove-ticket-btn').on('click', function(e) {
         e.stopPropagation();
-        
+
         const seats = $(this).data('seats').toString().split(',');
         const showtimeId = $(this).data('showtime');
-        
+
         if (!confirm('Remove these tickets from your cart?')) {
             return;
         }
-        
+
         // Remove each seat
         const removePromises = seats.map(seat => {
             return $.ajax({
@@ -851,29 +898,29 @@ jQuery(document).ready(function($) {
                 }
             });
         });
-        
+
         Promise.all(removePromises).then(() => {
             location.reload();
         });
     });
-    
+
     // Proceed to payment
     $('#proceed-payment').on('click', function() {
         $(this).prop('disabled', true).text('Processing...');
         window.location.href = '<?php echo home_url('/payment'); ?>';
     });
-    
+
     // Apply promo code
     $('.apply-promo-btn').on('click', function() {
         const promoCode = $('#promo-code').val().trim();
-        
+
         if (!promoCode) {
             alert('Please enter a promo code');
             return;
         }
-        
+
         $(this).prop('disabled', true).text('APPLYING...');
-        
+
         $.ajax({
             url: '<?php echo admin_url('admin-ajax.php'); ?>',
             type: 'POST',
@@ -897,7 +944,7 @@ jQuery(document).ready(function($) {
             }
         });
     });
-    
+
     // Allow Enter key for promo code
     $('#promo-code').on('keypress', function(e) {
         if (e.which === 13) {
