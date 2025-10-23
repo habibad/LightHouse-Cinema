@@ -854,6 +854,14 @@ get_header();
     cursor: not-allowed;
 }
 
+
+.zoom-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+
 /* ============================================
    RIGHT SIDEBAR - CART
    ============================================ */
@@ -1520,23 +1528,6 @@ jQuery(document).ready(function($) {
     // Load seat map
     loadSeatMap(currentShowtimeId);
 
-    // function loadSeatMap(showtimeId) {
-    //     $.ajax({
-    //         url: '<?php echo admin_url('admin-ajax.php'); ?>',
-    //         type: 'POST',
-    //         data: {
-    //             action: 'cinema_get_seat_map',
-    //             showtime_id: showtimeId,
-    //             nonce: '<?php echo wp_create_nonce('cinema_nonce'); ?>'
-    //         },
-    //         success: function(response) {
-    //             if (response.success) {
-    //                 renderSeatMap(response.data.seats, response.data.booked);
-    //             }
-    //         }
-    //     });
-    // }
-
     function loadSeatMap(showtimeId) {
         $.ajax({
             url: '<?php echo admin_url('admin-ajax.php'); ?>',
@@ -1804,22 +1795,23 @@ jQuery(document).ready(function($) {
 
     // Mouse wheel zoom
     $('#seat-map').on('wheel', function(e) {
-        if (e.ctrlKey) {
-            e.preventDefault();
+    e.preventDefault(); // prevent page scroll
 
-            if (e.originalEvent.deltaY < 0) {
-                if (zoomLevel < maxZoom) {
-                    zoomLevel = Math.min(zoomLevel + 0.1, maxZoom);
-                    applyZoom();
-                }
-            } else {
-                if (zoomLevel > minZoom) {
-                    zoomLevel = Math.max(zoomLevel - 0.1, minZoom);
-                    applyZoom();
-                }
-            }
+    if (e.originalEvent.deltaY < 0) {
+        // scroll up → zoom in
+        if (zoomLevel < maxZoom) {
+            zoomLevel = Math.min(zoomLevel + 0.1, maxZoom);
+            applyZoom();
         }
-    });
+    } else {
+        // scroll down → zoom out
+        if (zoomLevel > minZoom) {
+            zoomLevel = Math.max(zoomLevel - 0.1, minZoom);
+            applyZoom();
+        }
+    }
+});
+
 });
 </script>
 
