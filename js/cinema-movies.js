@@ -374,7 +374,7 @@
             if (navigator.share) {
                 navigator.share({
                     title: movieTitle,
-                    text: `Check out "${movieTitle}" - now playing at Cinépolis!`,
+                    text: `Check out "${movieTitle}" - now playing at Lighthouse Cinemma!`,
                     url: movieUrl
                 }).catch(err => console.log('Share cancelled'));
             } else if (navigator.clipboard) {

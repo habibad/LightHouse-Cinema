@@ -60,7 +60,7 @@ get_header();
 
         <div class="cart-logo">
             <a href="<?php echo esc_url(home_url('/')); ?>">
-                <h1>cinépolis</h1>
+                <img src="<?php echo get_stylesheet_directory_uri(); ?>/assets/logo.png" alt="logo">
             </a>
         </div>
 

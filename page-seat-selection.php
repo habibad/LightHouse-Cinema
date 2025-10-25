@@ -166,7 +166,7 @@ get_header();
 
             <div class="header-center">
                 <a href="<?php echo esc_url(home_url('/')); ?>" class="logo-link">
-                    <h1>cinépolis</h1>
+                    <img src="<?php echo get_stylesheet_directory_uri(); ?>/assets/logo.png" alt="logo">
                 </a>
             </div>
 

@@ -255,7 +255,7 @@ if (is_user_logged_in()) {
     
     <div class="auth-box">
         <div class="auth-header">
-            <div class="auth-logo">cinépolis</div>
+            <img src="<?php echo get_stylesheet_directory_uri(); ?>/assets/logo.png" alt="logo">
             <p>Create your account</p>
         </div>
         

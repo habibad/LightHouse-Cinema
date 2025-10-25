@@ -95,7 +95,7 @@ function cinema_movies_slider_shortcode($atts) {
 
 <div class="cinema-movies-slider-wrapper">
     <div class="cinema-section-header" style="text-align: center; margin-bottom: 40px; color: #fff;">
-        <h2>WHAT'S PLAYING AT CINÉPOLIS</h2>
+        <h2>WHAT'S PLAYING AT Lighthouse Cinema</h2>
     </div>
     <!-- Tab Navigation -->
     <div class="cinema-tabs-wrapper">

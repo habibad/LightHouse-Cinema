@@ -445,7 +445,7 @@ function cinema_render_promotion_card($event_id) {
 function cinema_render_placeholder_cards() {
     $placeholders = array(
         array(
-            'title' => 'Happy Hour at Cinépolis',
+            'title' => 'Happy Hour at Lighthouse Cinema',
             'description' => 'Enjoy Happy Hour specials Monday through Friday until 6PM and ALL DAY on Tuesdays!',
             'link' => '#',
             'bg' => 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
@@ -457,13 +457,13 @@ function cinema_render_placeholder_cards() {
             'bg' => 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)'
         ),
         array(
-            'title' => 'Cinépolis Rewards',
-            'description' => 'Sign up for Cinépolis Rewards and start earning points towards FREE tickets!',
+            'title' => 'Lighthouse Cinema Rewards',
+            'description' => 'Sign up for Lighthouse Cinema Rewards and start earning points towards FREE tickets!',
             'link' => '#',
             'bg' => 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)'
         ),
         array(
-            'title' => 'Cinépolis Handpicked',
+            'title' => 'Lighthouse Cinema Handpicked',
             'description' => 'Check out our $5 movies every week! See what\'s coming soon!',
             'link' => '#',
             'bg' => 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)'

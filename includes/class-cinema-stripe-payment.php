@@ -283,7 +283,7 @@ class Cinema_Stripe_Payment {
         </div>
 
         <div class="footer">
-            <p>&copy; <?php echo date('Y'); ?> Cinépolis. All rights reserved.</p>
+            <p>&copy; <?php echo date('Y'); ?> Lighthouse Cinema. All rights reserved.</p>
             <p>If you have any questions, contact us at support@cinepolis.com</p>
         </div>
     </div>

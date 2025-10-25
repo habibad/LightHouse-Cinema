@@ -6,7 +6,7 @@ get_header();
     <div class="movies-header">
         <h1 class="movies-title">MOVIES</h1>
         <p class="movies-subtitle">Browse the latest movies out now, advanced tickets, and movies coming soon to
-            Cinépolis.</p>
+            Lighthouse Cinema.</p>
     </div>
 
     <div class="movies-filter">

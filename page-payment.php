@@ -47,7 +47,7 @@ get_header();
         
         <div class="cinema-logo">
             <a href="<?php echo esc_url( home_url( '/' ) ); ?>">
-                <h2>cinépolis</h2>
+                <img src="<?php echo get_stylesheet_directory_uri(); ?>/assets/logo.png" alt="logo">
             </a>
         </div>
         
