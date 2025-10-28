@@ -920,6 +920,7 @@ function cinema_get_booked_seats($showtime_id, $screen_number) {
     return $booked_seats ? $booked_seats : array();
 }
 
+
 // Get locked seats
 function cinema_get_locked_seats($showtime_id, $screen_number, $exclude_session = null) {
     global $wpdb;
@@ -1385,6 +1386,10 @@ function cinema_enqueue_scripts() {
 add_action('wp_enqueue_scripts', 'cinema_enqueue_scripts');
 
 //stripe configuration
+define('STRIPE_PUBLISHABLE_KEY', '');
+define('STRIPE_SECRET_KEY', '');
+define('STRIPE_WEBHOOK_SECRET', '');
+
 
 require_once get_stylesheet_directory() . '/includes/vendor/autoload.php';
 \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
@@ -2494,9 +2499,9 @@ function cinema_get_event_bookings($user_id) {
 // SQUARE CONFIGURATION CONSTANTS
 // ========================================================================
 define('SQUARE_ENVIRONMENT', 'sandbox'); // 'sandbox' or 'production'
-define('SQUARE_APPLICATION_ID', 'sandbox-sq0idb-ZeFjROdOW5taotI5wxWYjw'); 
-define('SQUARE_ACCESS_TOKEN', 'EAAAl3yb3rEFAVtFkU5vvTY0VqpaH4Tlln9QMa467c59rZjp9G070z6NmS0iCgZ-'); 
-define('SQUARE_LOCATION_ID', 'LAGRDVB7TG9V9'); 
+define('SQUARE_APPLICATION_ID', ''); 
+define('SQUARE_ACCESS_TOKEN', ''); 
+define('SQUARE_LOCATION_ID', ''); 
 define('SQUARE_WEBHOOK_SECRET', ''); // Optional
 
 /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * Square Payment Integration - Fixed Money Object Issue
+ * Square Payment Integration - With Complete Refund Support
  * Compatible with existing Stripe implementation
  */
 
@@ -40,7 +40,7 @@ class Cinema_Square_Payment {
     }
     
     /**
-     * Create Square payment - FIXED VERSION
+     * Create Square payment
      */
     public function create_square_payment() {
         check_ajax_referer('cinema_nonce', 'nonce');
@@ -76,16 +76,14 @@ class Cinema_Square_Payment {
             // Create payment
             $payments_api = $this->square_client->getPaymentsApi();
             
-            // FIXED: Create Money object properly
+            // Create Money object properly
             $amount_money = new \Square\Models\Money();
-            $amount_money->setAmount((int)$amount); // Ensure it's an integer
+            $amount_money->setAmount((int)$amount);
             $amount_money->setCurrency($currency);
             
             // Verify the Money object was created correctly
             if (!$amount_money->getAmount() || !$amount_money->getCurrency()) {
                 error_log('Square Payment - Money object validation failed');
-                error_log('Amount: ' . var_export($amount_money->getAmount(), true));
-                error_log('Currency: ' . var_export($amount_money->getCurrency(), true));
                 throw new Exception('Failed to create payment amount object');
             }
             
@@ -251,6 +249,100 @@ class Cinema_Square_Payment {
     }
     
     /**
+     * Process Square refund - FIXED VERSION
+     * This is called when a booking is cancelled
+     */
+    public function process_refund($payment_id, $amount_cents = null, $reason = 'Customer cancellation') {
+        try {
+            error_log('Square Refund - Starting refund for payment: ' . $payment_id);
+            error_log('Square Refund - Amount (cents): ' . ($amount_cents ? $amount_cents : 'full refund'));
+            error_log('Square Refund - Reason: ' . $reason);
+            
+            $refunds_api = $this->square_client->getRefundsApi();
+            
+            // Generate unique idempotency key for refund
+            $idempotency_key = 'refund_' . bin2hex(random_bytes(16));
+            
+            // Create refund request
+            $body = new \Square\Models\RefundPaymentRequest(
+                $idempotency_key,
+                $payment_id
+            );
+            
+            // If specific amount is provided, set it (otherwise full refund)
+            if ($amount_cents !== null) {
+                $amount_money = new \Square\Models\Money();
+                $amount_money->setAmount((int)$amount_cents);
+                $amount_money->setCurrency('USD');
+                $body->setAmountMoney($amount_money);
+            }
+            
+            // Set reason for refund
+            $body->setReason($reason);
+            
+            error_log('Square Refund - Sending refund request to API...');
+            
+            // Make the API call
+            $api_response = $refunds_api->refundPayment($body);
+            
+            if ($api_response->isSuccess()) {
+                $result = $api_response->getResult();
+                $refund = $result->getRefund();
+                
+                error_log('Square Refund - Refund successful! ID: ' . $refund->getId());
+                error_log('Square Refund - Status: ' . $refund->getStatus());
+                error_log('Square Refund - Amount: ' . $refund->getAmountMoney()->getAmount());
+                
+                return array(
+                    'success' => true,
+                    'refund_id' => $refund->getId(),
+                    'status' => $refund->getStatus(),
+                    'amount' => $refund->getAmountMoney()->getAmount() / 100, // Convert cents to dollars
+                    'message' => 'Refund processed successfully'
+                );
+            } else {
+                $errors = $api_response->getErrors();
+                error_log('Square Refund - API returned errors');
+                
+                if (!empty($errors)) {
+                    foreach ($errors as $error) {
+                        error_log('Square Refund Error - Category: ' . $error->getCategory());
+                        error_log('Square Refund Error - Code: ' . $error->getCode());
+                        error_log('Square Refund Error - Detail: ' . $error->getDetail());
+                    }
+                    $error_message = $errors[0]->getDetail();
+                } else {
+                    $error_message = 'Unknown error occurred';
+                }
+                
+                error_log('Square Refund - Failed: ' . $error_message);
+                
+                return array(
+                    'success' => false,
+                    'message' => 'Refund failed: ' . $error_message
+                );
+            }
+            
+        } catch (\Square\Exceptions\ApiException $e) {
+            error_log('Square Refund API Exception: ' . $e->getMessage());
+            error_log('Square Refund API Response: ' . print_r($e->getResponseBody(), true));
+            
+            return array(
+                'success' => false,
+                'message' => 'Refund API error: ' . $e->getMessage()
+            );
+        } catch (Exception $e) {
+            error_log('Square Refund Exception: ' . $e->getMessage());
+            error_log('Stack trace: ' . $e->getTraceAsString());
+            
+            return array(
+                'success' => false,
+                'message' => 'Refund error: ' . $e->getMessage()
+            );
+        }
+    }
+    
+    /**
      * Send confirmation email
      */
     private function send_confirmation_email($booking) {
@@ -298,83 +390,22 @@ class Cinema_Square_Payment {
         ?>
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="UTF-8">
     <style>
-    body {
-        font-family: Arial, sans-serif;
-        line-height: 1.6;
-        color: #333;
-    }
-
-    .container {
-        max-width: 600px;
-        margin: 0 auto;
-        padding: 20px;
-    }
-
-    .header {
-        background: #1a1a1a;
-        color: white;
-        padding: 20px;
-        text-align: center;
-    }
-
-    .content {
-        background: #f9f9f9;
-        padding: 30px;
-    }
-
-    .booking-details {
-        background: white;
-        padding: 20px;
-        margin: 20px 0;
-        border-radius: 8px;
-    }
-
-    .detail-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px solid #eee;
-    }
-
-    .detail-label {
-        font-weight: bold;
-    }
-
-    .seats {
-        background: #e8f4f8;
-        padding: 15px;
-        margin: 15px 0;
-        border-radius: 5px;
-    }
-
-    .qr-code {
-        text-align: center;
-        margin: 20px 0;
-    }
-
-    .footer {
-        text-align: center;
-        padding: 20px;
-        color: #666;
-        font-size: 12px;
-    }
-
-    .button {
-        display: inline-block;
-        padding: 12px 30px;
-        background: #4A90E2;
-        color: white;
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 15px 0;
-    }
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: #1a1a1a; color: white; padding: 20px; text-align: center; }
+    .content { background: #f9f9f9; padding: 30px; }
+    .booking-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
+    .detail-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+    .detail-label { font-weight: bold; }
+    .seats { background: #e8f4f8; padding: 15px; margin: 15px 0; border-radius: 5px; }
+    .qr-code { text-align: center; margin: 20px 0; }
+    .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+    .button { display: inline-block; padding: 12px 30px; background: #4A90E2; color: white; text-decoration: none; border-radius: 5px; margin: 15px 0; }
     </style>
 </head>
-
 <body>
     <div class="container">
         <div class="header">
@@ -413,8 +444,7 @@ class Cinema_Square_Payment {
             <div class="seats">
                 <strong>Your Seats:</strong><br>
                 <?php echo implode(', ', $seat_list); ?>
-                <br><small>(<?php echo count($seat_list); ?>
-                    seat<?php echo count($seat_list) > 1 ? 's' : ''; ?>)</small>
+                <br><small>(<?php echo count($seat_list); ?> seat<?php echo count($seat_list) > 1 ? 's' : ''; ?>)</small>
             </div>
             <?php endif; ?>
             <div class="detail-row">
@@ -423,8 +453,7 @@ class Cinema_Square_Payment {
             </div>
             <div class="qr-code">
                 <p><strong>Show this code at the cinema:</strong></p>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?php echo urlencode($booking->booking_reference); ?>"
-                    alt="QR Code">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=<?php echo urlencode($booking->booking_reference); ?>" alt="QR Code">
                 <p><strong><?php echo esc_html($booking->booking_reference); ?></strong></p>
             </div>
             <center>
@@ -443,39 +472,9 @@ class Cinema_Square_Payment {
         </div>
     </div>
 </body>
-
 </html>
 <?php
         return ob_get_clean();
-    }
-    
-    /**
-     * Cancel payment (refund)
-     */
-    public function cancel_payment($payment_id) {
-        try {
-            $refunds_api = $this->square_client->getRefundsApi();
-            
-            $body = new \Square\Models\RefundPaymentRequest(
-                bin2hex(random_bytes(16)), // Idempotency key
-                new \Square\Models\Money()
-            );
-            
-            $api_response = $refunds_api->refundPayment($payment_id, $body);
-            
-            if ($api_response->isSuccess()) {
-                return true;
-            } else {
-                $errors = $api_response->getErrors();
-                $error_message = isset($errors[0]) ? $errors[0]->getDetail() : 'Unknown error';
-                error_log('Square refund failed: ' . $error_message);
-                return false;
-            }
-            
-        } catch (Exception $e) {
-            error_log('Square refund error: ' . $e->getMessage());
-            return false;
-        }
     }
     
     /**
@@ -601,16 +600,16 @@ class Cinema_Square_Payment {
     }
 }
 
-// Initialize
-new Cinema_Square_Payment();
+// Initialize Square Payment
+$GLOBALS['cinema_square_payment'] = new Cinema_Square_Payment();
 
 // Webhook endpoint
 add_action('rest_api_init', function() {
     register_rest_route('cinema/v1', '/square-webhook', array(
         'methods' => 'POST',
         'callback' => function() {
-            $payment = new Cinema_Square_Payment();
-            $payment->handle_webhook();
+            global $cinema_square_payment;
+            $cinema_square_payment->handle_webhook();
         },
         'permission_callback' => '__return_true'
     ));
