@@ -1,6 +1,6 @@
 <?php
 /*
-Template Name: Payment
+Template Name: Payment (Stripe & Square - Complete Working Version)
 */
 
 // Check if user is logged in
@@ -42,12 +42,16 @@ get_header();
 <div class="payment-page-wrapper">
     <div class="payment-header">
         <button class="back-btn" onclick="history.back()">
-            <span>←</span> <span class="location-text">RANCHO SANTA MARGARITA</span>
+            <span>←</span> <span class="location-text">BACK</span>
         </button>
         
         <div class="cinema-logo">
-            <a href="<?php echo esc_url( home_url( '/' ) ); ?>">
-                <img src="<?php echo get_stylesheet_directory_uri(); ?>/assets/logo.png" alt="logo">
+            <a href="<?php echo esc_url(home_url('/')); ?>">
+                <?php if (has_custom_logo()) : ?>
+                    <?php the_custom_logo(); ?>
+                <?php else : ?>
+                    <h2><?php bloginfo('name'); ?></h2>
+                <?php endif; ?>
             </a>
         </div>
         
@@ -76,11 +80,15 @@ get_header();
             <!-- Pricing Section -->
             <div class="payment-section pricing-section">
                 <div class="section-header">
-                    <span class="section-icon">$</span>
+                    <span class="section-icon">💰</span>
                     <h3>PRICING</h3>
                 </div>
                 
                 <div class="section-content">
+                    <div class="pricing-row">
+                        <span>Subtotal (<?php echo $total_tickets; ?> ticket<?php echo $total_tickets > 1 ? 's' : ''; ?>)</span>
+                        <span>$<?php echo number_format($subtotal, 2); ?></span>
+                    </div>
                     <div class="pricing-row">
                         <span>Booking Fee</span>
                         <span>$<?php echo number_format($booking_fee, 2); ?></span>
@@ -93,13 +101,13 @@ get_header();
                     <div class="terms-checkbox">
                         <label>
                             <input type="checkbox" id="terms-agreement" required>
-                            <span>I have read and agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></span>
+                            <span>I have read and agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a></span>
                         </label>
                     </div>
                 </div>
             </div>
             
-            <!-- Gift Card Section -->
+            <!-- Gift Card/Promo Section -->
             <div class="payment-section collapsed">
                 <div class="section-header collapsible">
                     <span class="section-icon">🎁</span>
@@ -111,51 +119,115 @@ get_header();
                         <input type="text" placeholder="Enter code" class="promo-input">
                         <button class="btn-apply">APPLY</button>
                     </div>
+                    <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                        Try: <code>DISCOUNT10</code>, <code>STUDENT15</code>
+                    </p>
                 </div>
             </div>
             
-            <!-- Credit Card Section -->
-            <div class="payment-section collapsed">
-                <div class="section-header collapsible">
+            <!-- Payment Method Selection -->
+            <div class="payment-section">
+                <div class="section-header">
                     <span class="section-icon">💳</span>
-                    <h3>Add Default Credit Card</h3>
+                    <h3>SELECT PAYMENT METHOD</h3>
+                </div>
+                <div class="section-content">
+                    <div class="payment-method-selector">
+                        <label class="payment-method-option">
+                            <input type="radio" name="payment_method" value="stripe" checked>
+                            <div class="method-card">
+                                <div class="method-icon">💳</div>
+                                <span class="method-name">Credit/Debit Card</span>
+                                <span class="method-provider">Powered by Stripe</span>
+                            </div>
+                        </label>
+                        
+                        <label class="payment-method-option">
+                            <input type="radio" name="payment_method" value="square">
+                            <div class="method-card">
+                                <div class="method-icon">💳</div>
+                                <span class="method-name">Credit/Debit Card</span>
+                                <span class="method-provider">Powered by Square</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stripe Payment Section -->
+            <div class="payment-section collapsed" id="stripe-payment-section">
+                <div class="section-header collapsible">
+                    <span class="section-icon">🔒</span>
+                    <h3>Stripe Payment Details</h3>
                     <button class="expand-btn">+</button>
                 </div>
                 <div class="section-content" style="display: none;">
-                    <form id="payment-form">
-                        <div class="payment-method-tabs">
-                            <button type="button" class="tab-btn active" data-method="card">
-                                <span class="card-icon">💳</span>
-                                Card
-                            </button>
-                        </div>
-                        
-                        <div class="stripe-info">
+                    <form id="stripe-payment-form">
+                        <div class="payment-info-box">
                             <span class="lock-icon">🔒</span>
-                            <span>Secure, fast checkout with Link</span>
+                            <span>Secure checkout powered by Stripe</span>
                         </div>
                         
                         <div class="form-group">
                             <label>CARD INFORMATION</label>
-                            <div id="card-element" class="stripe-input"></div>
+                            <div id="stripe-card-element"></div>
                         </div>
                         
                         <div class="form-group">
-                            <label>COUNTRY</label>
-                            <select id="country" class="form-input">
-                                <option value="BD">Bangladesh</option>
+                            <label>BILLING COUNTRY</label>
+                            <select id="stripe-country" class="form-input">
+                                <option value="">Select Country</option>
                                 <option value="US">United States</option>
-                                <option value="UK">United Kingdom</option>
+                                <option value="BD">Bangladesh</option>
+                                <option value="GB">United Kingdom</option>
                                 <option value="CA">Canada</option>
                                 <option value="AU">Australia</option>
+                                <option value="IN">India</option>
+                                <option value="PK">Pakistan</option>
                             </select>
                         </div>
                         
-                        <div id="card-errors" class="error-message"></div>
+                        <div id="stripe-card-errors" class="error-message"></div>
                         
-                        <button type="submit" class="btn-pay" id="submit-payment">
-                            PAY $<?php echo number_format($total, 2); ?> WITH CARD
+                        <button type="submit" class="btn-pay" id="stripe-submit-payment" disabled>
+                            PAY $<?php echo number_format($total, 2); ?> WITH STRIPE
                         </button>
+                        
+                        <div class="payment-test-info">
+                            <strong>Test Card:</strong> 4242 4242 4242 4242 | CVV: 123 | Expiry: Any future date
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Square Payment Section -->
+            <div class="payment-section collapsed" id="square-payment-section">
+                <div class="section-header collapsible">
+                    <span class="section-icon">🔒</span>
+                    <h3>Square Payment Details</h3>
+                    <button class="expand-btn">+</button>
+                </div>
+                <div class="section-content" style="display: none;">
+                    <form id="square-payment-form">
+                        <div class="payment-info-box">
+                            <span class="lock-icon">🔒</span>
+                            <span>Secure checkout powered by Square</span>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>CARD INFORMATION</label>
+                            <div id="square-card-container"></div>
+                        </div>
+                        
+                        <div id="square-card-errors" class="error-message"></div>
+                        
+                        <button type="submit" class="btn-pay" id="square-submit-payment" disabled>
+                            PAY $<?php echo number_format($total, 2); ?> WITH SQUARE
+                        </button>
+                        
+                        <div class="payment-test-info">
+                            <strong>Test Card:</strong> 4111 1111 1111 1111 | CVV: 111 | Postal: 12345
+                        </div>
                     </form>
                 </div>
             </div>
@@ -166,314 +238,60 @@ get_header();
             <div class="sidebar-ticket-info">
                 <div class="ticket-header">
                     <span class="ticket-icon">🎫</span>
-                    <span class="ticket-label">TICKETS</span>
+                    <span class="ticket-label">ORDER SUMMARY</span>
                 </div>
-                <div class="ticket-details">
-                    <span><?php echo $total_tickets; ?> ticket<?php echo $total_tickets > 1 ? 's' : ''; ?></span>
-                    <span class="ticket-price">$<?php echo number_format($total, 2); ?></span>
+                
+                <div class="order-items">
+                    <?php foreach ($cart_items as $item) : ?>
+                    <div class="order-item">
+                        <div class="item-details">
+                            <div class="item-seat"><?php echo esc_html($item['seat']); ?></div>
+                            <div class="item-type"><?php echo esc_html($item['type']); ?></div>
+                        </div>
+                        <div class="item-price">$<?php echo number_format($item['price'], 2); ?></div>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+                
+                <div class="sidebar-total">
+                    <span>Total Amount</span>
+                    <span class="total-amount">$<?php echo number_format($total, 2); ?></span>
                 </div>
             </div>
             
             <div class="sidebar-promo">
-                <input type="text" placeholder="Add Gift Card, Voucher, Promo Code" class="promo-sidebar-input">
+                <input type="text" placeholder="Enter promo code" class="promo-sidebar-input">
                 <button class="btn-apply-sidebar">APPLY</button>
+            </div>
+            
+            <div class="sidebar-help">
+                <h4>Need Help?</h4>
+                <p>Contact our support team if you have any questions about your booking.</p>
+                <a href="mailto:support@cinema.com" class="help-link">support@cinema.com</a>
             </div>
         </aside>
     </div>
 </div>
 
-<script src="https://js.stripe.com/v3/"></script>
-<script>
-jQuery(document).ready(function($) {
-    'use strict';
+<!-- Hidden data for JavaScript -->
+<div id="cart-data" 
+     data-items='<?php echo esc_attr(json_encode($cart_items)); ?>'
+     data-total="<?php echo esc_attr($total); ?>"
+     style="display: none;">
+</div>
 
-    // Initialize Stripe
-    const stripe = Stripe('<?php echo STRIPE_PUBLISHABLE_KEY; ?>');
-    const elements = stripe.elements();
-    
-    // Create card element
-    const cardElement = elements.create('card', {
-        style: {
-            base: {
-                fontSize: '14px',
-                color: '#333',
-                fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-                '::placeholder': {
-                    color: '#aaa'
-                }
-            },
-            invalid: {
-                color: '#fa755a',
-                iconColor: '#fa755a'
-            }
-        },
-        hidePostalCode: false
-    });
-    
-    cardElement.mount('#card-element');
-    
-    // Handle real-time validation errors
-    cardElement.on('change', function(event) {
-        const displayError = document.getElementById('card-errors');
-        if (event.error) {
-            displayError.textContent = event.error.message;
-        } else {
-            displayError.textContent = '';
-        }
-    });
-    
-    // Toggle sections
-    $('.collapsible').on('click', function() {
-        const $section = $(this).closest('.payment-section');
-        const $content = $section.find('.section-content');
-        const $btn = $(this).find('.expand-btn');
-        
-        $content.slideToggle(300);
-        $btn.text($btn.text() === '+' ? '−' : '+');
-        $section.toggleClass('collapsed');
-    });
-    
-    // Handle form submission
-    const form = document.getElementById('payment-form');
-    const submitButton = document.getElementById('submit-payment');
-    
-    form.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        
-        // Check terms agreement
-        if (!$('#terms-agreement').is(':checked')) {
-            showNotification('Please accept the terms and conditions', 'error');
-            return;
-        }
-        
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner"></span> Processing...';
-        
-        try {
-            console.log('Step 1: Creating booking...');
-            
-            // Step 1: Create booking
-            const bookingResponse = await createBooking({
-                cart_items: <?php echo json_encode($cart_items); ?>,
-                customer_name: '<?php echo esc_js($current_user->display_name); ?>',
-                customer_email: '<?php echo esc_js($current_user->user_email); ?>',
-                customer_phone: ''
-            });
-            
-            console.log('Booking Response:', bookingResponse);
-            
-            if (!bookingResponse.success) {
-                throw new Error(bookingResponse.data?.message || bookingResponse.message || 'Failed to create booking');
-            }
-            
-            const bookingId = bookingResponse.data?.booking_id || bookingResponse.booking_id;
-            
-            if (!bookingId) {
-                throw new Error('No booking ID received from server');
-            }
-            
-            console.log('Booking ID:', bookingId);
-            console.log('Step 2: Creating payment intent...');
-            
-            // Step 2: Create payment intent
-            const intentResponse = await createPaymentIntent(bookingId, <?php echo $total; ?>);
-            
-            console.log('Intent Response:', intentResponse);
-            
-            if (!intentResponse.success && !intentResponse.client_secret) {
-                throw new Error(intentResponse.data?.message || intentResponse.message || 'Failed to initialize payment');
-            }
-            
-            const clientSecret = intentResponse.data?.client_secret || intentResponse.client_secret;
-            
-            if (!clientSecret) {
-                throw new Error('No client secret received from server');
-            }
-            
-            console.log('Step 3: Confirming card payment...');
-            
-            // Step 3: Confirm card payment
-            const {error, paymentIntent} = await stripe.confirmCardPayment(
-                clientSecret,
-                {
-                    payment_method: {
-                        card: cardElement,
-                        billing_details: {
-                            name: '<?php echo esc_js($current_user->display_name); ?>',
-                            email: '<?php echo esc_js($current_user->user_email); ?>'
-                        }
-                    }
-                }
-            );
-            
-            if (error) {
-                console.error('Stripe error:', error);
-                throw new Error(error.message);
-            }
-            
-            console.log('Payment Intent Status:', paymentIntent.status);
-            
-            if (paymentIntent.status === 'succeeded') {
-                console.log('Step 4: Confirming payment...');
-                
-                // Step 4: Confirm payment
-                const confirmResponse = await confirmPayment(paymentIntent.id, bookingId);
-                
-                console.log('Confirm Response:', confirmResponse);
-                
-                if (confirmResponse.success) {
-                    const bookingRef = confirmResponse.data?.booking_reference || confirmResponse.booking_reference;
-                    showSuccessModal(bookingRef);
-                } else {
-                    throw new Error('Payment succeeded but booking confirmation failed');
-                }
-            } else {
-                throw new Error('Payment not completed. Status: ' + paymentIntent.status);
-            }
-            
-        } catch (error) {
-            console.error('Payment error:', error);
-            showNotification(error.message, 'error');
-            submitButton.disabled = false;
-            submitButton.innerHTML = 'PAY $<?php echo number_format($total, 2); ?> WITH CARD';
-        }
-    });
-    
-    // Create booking
-    async function createBooking(data) {
-        try {
-            const response = await fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'cinema_create_booking_payment',
-                    nonce: '<?php echo wp_create_nonce('cinema_nonce'); ?>',
-                    cart_items: JSON.stringify(data.cart_items),
-                    customer_name: data.customer_name,
-                    customer_email: data.customer_email,
-                    customer_phone: data.customer_phone
-                })
-            });
-            
-            const result = await response.json();
-            console.log('Raw booking response:', result);
-            return result;
-            
-        } catch (error) {
-            console.error('Booking creation error:', error);
-            throw error;
-        }
-    }
-    
-    // Create payment intent
-    async function createPaymentIntent(bookingId, amount) {
-        try {
-            const response = await fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'cinema_create_payment_intent',
-                    nonce: '<?php echo wp_create_nonce('cinema_nonce'); ?>',
-                    booking_id: bookingId,
-                    amount: amount
-                })
-            });
-            
-            const result = await response.json();
-            console.log('Raw payment intent response:', result);
-            return result;
-            
-        } catch (error) {
-            console.error('Payment intent creation error:', error);
-            throw error;
-        }
-    }
-    
-    // Confirm payment
-    async function confirmPayment(paymentIntentId, bookingId) {
-        try {
-            const response = await fetch('<?php echo admin_url('admin-ajax.php'); ?>', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: new URLSearchParams({
-                    action: 'cinema_confirm_payment',
-                    nonce: '<?php echo wp_create_nonce('cinema_nonce'); ?>',
-                    payment_intent_id: paymentIntentId,
-                    booking_id: bookingId
-                })
-            });
-            
-            const result = await response.json();
-            console.log('Raw confirm response:', result);
-            return result;
-            
-        } catch (error) {
-            console.error('Payment confirmation error:', error);
-            throw error;
-        }
-    }
-    
-    // Show success modal
-    function showSuccessModal(bookingReference) {
-        const modalHTML = `
-            <div id="payment-success-modal" class="modal" style="display: flex;">
-                <div class="modal-overlay"></div>
-                <div class="modal-content">
-                    <div class="success-icon">✓</div>
-                    <h3>Payment Successful!</h3>
-                    <p>Your booking has been confirmed</p>
-                    <div class="booking-ref">
-                        <strong>Confirmation:</strong> ${bookingReference}
-                    </div>
-                    <button class="btn-primary" onclick="window.location.href='<?php echo home_url('/my-account'); ?>'">
-                        View My Bookings
-                    </button>
-                    <button class="btn-secondary" onclick="window.location.href='<?php echo home_url('/movies'); ?>'">
-                        Book Another Movie
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        $('body').append(modalHTML);
-        
-        // Clear cart
-        $.post('<?php echo admin_url('admin-ajax.php'); ?>', {
-            action: 'cinema_clear_cart',
-            nonce: '<?php echo wp_create_nonce('cinema_nonce'); ?>'
-        });
-    }
-    
-    // Show notification
-    function showNotification(message, type = 'error') {
-        const notification = `
-            <div class="notification ${type}">
-                <span>${message}</span>
-                <button onclick="this.parentElement.remove()">×</button>
-            </div>
-        `;
-        
-        if (!$('.notifications-container').length) {
-            $('body').append('<div class="notifications-container"></div>');
-        }
-        
-        const $notif = $(notification);
-        $('.notifications-container').append($notif);
-        
-        setTimeout(() => $notif.addClass('show'), 10);
-        setTimeout(() => $notif.removeClass('show'), 5000);
-        setTimeout(() => $notif.remove(), 5300);
-    }
-});
+<script>
+// Make cart items and user data available globally
+var cinema_cart_items = <?php echo json_encode($cart_items); ?>;
+var cinema_user = {
+    name: '<?php echo esc_js($current_user->display_name); ?>',
+    email: '<?php echo esc_js($current_user->user_email); ?>',
+    id: <?php echo intval($current_user->ID); ?>
+};
 </script>
 
 <style>
+/* Reset and Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -482,7 +300,7 @@ jQuery(document).ready(function($) {
 
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    background: #fff;
+    background: #f8f9fa;
 }
 
 .payment-page-wrapper {
@@ -498,6 +316,7 @@ body {
     padding: 20px 40px;
     background: white;
     border-bottom: 1px solid #e5e5e5;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
 .back-btn, .close-btn {
@@ -509,26 +328,29 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 8px 16px;
+    border-radius: 4px;
+    transition: background 0.2s;
 }
 
 .back-btn:hover, .close-btn:hover {
+    background: #f5f5f5;
     color: #333;
 }
 
 .location-text {
     font-size: 14px;
+    font-weight: 500;
+}
+
+.cinema-logo img {
+    max-height: 40px;
 }
 
 .cinema-logo h2 {
-    font-size: 28px;
+    font-size: 24px;
     color: #333;
-    font-weight: 400;
-    font-style: italic;
-}
-
-.cinema-logo a {
-    text-decoration: none;
-    color: inherit;
+    font-weight: 600;
 }
 
 /* Progress Steps */
@@ -545,7 +367,8 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    opacity: 0.3;
+    opacity: 0.4;
+    transition: opacity 0.3s;
 }
 
 .step.active, .step.completed {
@@ -553,8 +376,8 @@ body {
 }
 
 .step-number {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     background: #e0e0e0;
     display: flex;
@@ -562,37 +385,42 @@ body {
     justify-content: center;
     margin-bottom: 10px;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 16px;
     color: #999;
+    transition: all 0.3s;
 }
 
 .step.active .step-number {
-    background: #333;
+    background: #4A90E2;
     color: white;
 }
 
 .step.completed .step-number {
-    background: #333;
+    background: #28a745;
     color: white;
 }
 
 .step-label {
     font-size: 14px;
     color: #666;
+    font-weight: 500;
 }
 
 /* Main Container */
 .payment-container {
     display: grid;
-    grid-template-columns: 1fr 420px;
+    grid-template-columns: 1fr 400px;
     max-width: 1400px;
     margin: 0 auto;
+    gap: 30px;
+    padding: 30px;
     min-height: calc(100vh - 200px);
 }
 
 .payment-main {
     background: white;
-    border-right: 1px solid #e5e5e5;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 /* Payment Sections */
@@ -600,11 +428,15 @@ body {
     border-bottom: 1px solid #e5e5e5;
 }
 
+.payment-section:last-child {
+    border-bottom: none;
+}
+
 .section-header {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 24px 40px;
+    padding: 24px 30px;
     background: #fafafa;
 }
 
@@ -614,19 +446,20 @@ body {
 }
 
 .section-header.collapsible:hover {
-    background: #f5f5f5;
+    background: #f0f0f0;
 }
 
 .section-icon {
-    font-size: 18px;
+    font-size: 20px;
 }
 
 .section-header h3 {
     flex: 1;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 1px;
+    letter-spacing: 0.5px;
     color: #333;
+    text-transform: uppercase;
 }
 
 .expand-btn {
@@ -641,148 +474,141 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: transform 0.3s;
 }
 
 .section-content {
-    padding: 30px 40px;
+    padding: 30px;
 }
 
 /* Pricing Section */
-.pricing-section .section-content {
-    padding: 24px 40px 30px;
-}
-
 .pricing-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 16px;
+    padding: 12px 0;
     font-size: 15px;
     color: #666;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.pricing-row:last-of-type {
+    border-bottom: none;
 }
 
 .pricing-row.total-row {
     padding-top: 16px;
-    border-top: 1px solid #e5e5e5;
     margin-top: 8px;
-    font-size: 16px;
+    border-top: 2px solid #333;
+    font-size: 18px;
     font-weight: 700;
     color: #333;
 }
 
 .terms-checkbox {
     margin-top: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 6px;
     font-size: 13px;
 }
 
 .terms-checkbox label {
     display: flex;
     align-items: start;
-    gap: 10px;
+    gap: 12px;
     cursor: pointer;
     color: #666;
 }
 
 .terms-checkbox input[type="checkbox"] {
     margin-top: 2px;
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
     cursor: pointer;
     flex-shrink: 0;
 }
 
 .terms-checkbox a {
-    color: #0066cc;
+    color: #4A90E2;
     text-decoration: none;
+    font-weight: 500;
 }
 
 .terms-checkbox a:hover {
     text-decoration: underline;
 }
 
-/* Promo Form */
-.promo-form {
-    display: flex;
-    gap: 10px;
+/* Payment Method Selector */
+.payment-method-selector {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
 }
 
-.promo-input {
-    flex: 1;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 14px;
-}
-
-.promo-input:focus {
-    outline: none;
-    border-color: #0066cc;
-}
-
-.btn-apply {
-    padding: 12px 24px;
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
+.payment-method-option {
     cursor: pointer;
-    font-weight: 600;
-    font-size: 13px;
-    letter-spacing: 0.5px;
 }
 
-.btn-apply:hover {
-    background: #ebebeb;
+.payment-method-option input[type="radio"] {
+    display: none;
 }
 
-/* Payment Method Tabs */
-.payment-method-tabs {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.tab-btn {
-    flex: 1;
-    padding: 14px;
-    border: 1px solid #ddd;
+.method-card {
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s;
     background: white;
-    border-radius: 4px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    transition: all 0.2s;
 }
 
-.tab-btn.active {
-    border-color: #0066cc;
+.method-card:hover {
+    border-color: #4A90E2;
+    box-shadow: 0 4px 12px rgba(74,144,226,0.15);
+    transform: translateY(-2px);
+}
+
+.payment-method-option input[type="radio"]:checked + .method-card {
+    border-color: #4A90E2;
     background: #f0f7ff;
-    color: #0066cc;
 }
 
-.card-icon {
-    font-size: 18px;
+.method-icon {
+    font-size: 32px;
+    margin-bottom: 10px;
 }
 
-/* Stripe Info */
-.stripe-info {
+.method-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+}
+
+.method-provider {
+    display: block;
+    font-size: 12px;
+    color: #999;
+}
+
+/* Payment Forms */
+.payment-info-box {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 12px 16px;
-    background: #f0f7ff;
-    border-radius: 4px;
+    background: #e8f4f8;
+    border-radius: 6px;
     margin-bottom: 24px;
     font-size: 13px;
     color: #0066cc;
 }
 
 .lock-icon {
-    font-size: 14px;
+    font-size: 16px;
 }
 
-/* Form Groups */
 .form-group {
     margin-bottom: 20px;
 }
@@ -797,31 +623,43 @@ body {
     text-transform: uppercase;
 }
 
-.stripe-input {
+#stripe-card-element,
+#square-card-container {
     padding: 14px 16px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
     background: white;
+    min-height: 45px;
+    transition: border-color 0.3s;
+}
+
+#stripe-card-element:focus-within,
+#square-card-container:focus-within {
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
 }
 
 .form-input {
     width: 100%;
     padding: 14px 16px;
     border: 1px solid #ddd;
-    border-radius: 4px;
+    border-radius: 6px;
     font-size: 14px;
     background: white;
+    transition: border-color 0.3s;
 }
 
 .form-input:focus {
     outline: none;
-    border-color: #0066cc;
+    border-color: #4A90E2;
+    box-shadow: 0 0 0 3px rgba(74,144,226,0.1);
 }
 
 .error-message {
-    color: #fa755a;
+    color: #dc3545;
     font-size: 13px;
     margin-top: 8px;
+    min-height: 20px;
 }
 
 /* Pay Button */
@@ -831,21 +669,25 @@ body {
     background: #4A90E2;
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 15px;
     letter-spacing: 0.5px;
-    transition: background 0.3s;
+    transition: all 0.3s;
+    margin-top: 10px;
 }
 
 .btn-pay:hover:not(:disabled) {
     background: #357ABD;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(74,144,226,0.3);
 }
 
 .btn-pay:disabled {
     background: #ccc;
     cursor: not-allowed;
+    transform: none;
 }
 
 .spinner {
@@ -864,96 +706,196 @@ body {
     to { transform: rotate(360deg); }
 }
 
+.payment-test-info {
+    margin-top: 12px;
+    padding: 12px;
+    background: #fff3cd;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #856404;
+    text-align: center;
+}
+
+/* Promo Form */
+.promo-form {
+    display: flex;
+    gap: 10px;
+}
+
+.promo-input,
+.promo-sidebar-input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+}
+
+.promo-input:focus,
+.promo-sidebar-input:focus {
+    outline: none;
+    border-color: #4A90E2;
+}
+
+.btn-apply,
+.btn-apply-sidebar {
+    padding: 12px 24px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    transition: background 0.3s;
+}
+
+.btn-apply:hover,
+.btn-apply-sidebar:hover {
+    background: #218838;
+}
+
 /* Sidebar */
 .payment-sidebar {
-    background: #fafafa;
-    padding: 40px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
 }
 
 .sidebar-ticket-info {
     background: white;
-    padding: 20px;
-    border-radius: 4px;
-    margin-bottom: 20px;
-    border: 1px solid #e5e5e5;
+    padding: 24px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .ticket-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 12px;
-    font-size: 11px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid #f0f0f0;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 1px;
     color: #666;
 }
 
 .ticket-icon {
-    font-size: 16px;
+    font-size: 18px;
 }
 
-.ticket-details {
+.order-items {
+    margin-bottom: 20px;
+}
+
+.order-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
-    color: #333;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
 }
 
-.ticket-price {
+.item-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.item-seat {
     font-weight: 600;
-    font-size: 16px;
+    color: #333;
+    font-size: 15px;
+}
+
+.item-type {
+    font-size: 12px;
+    color: #999;
+    text-transform: capitalize;
+}
+
+.item-price {
+    font-weight: 600;
+    color: #4A90E2;
+    font-size: 15px;
+}
+
+.sidebar-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 2px solid #333;
+    font-weight: 700;
+}
+
+.total-amount {
+    font-size: 24px;
+    color: #4A90E2;
 }
 
 .sidebar-promo {
     background: white;
     padding: 20px;
-    border-radius: 4px;
-    border: 1px solid #e5e5e5;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .promo-sidebar-input {
     width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    margin-bottom: 12px;
-    font-size: 13px;
-}
-
-.promo-sidebar-input:focus {
-    outline: none;
-    border-color: #0066cc;
+    margin-bottom: 10px;
 }
 
 .btn-apply-sidebar {
     width: 100%;
-    padding: 12px;
-    background: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: 600;
+}
+
+.sidebar-help {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.sidebar-help h4 {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.sidebar-help p {
     font-size: 13px;
-    letter-spacing: 0.5px;
+    color: #666;
+    margin-bottom: 12px;
+    line-height: 1.6;
 }
 
-.btn-apply-sidebar:hover {
-    background: #ebebeb;
+.help-link {
+    color: #4A90E2;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
 }
 
-/* Modal */
+.help-link:hover {
+    text-decoration: underline;
+}
+
+/* Modal Styles */
 .modal {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     z-index: 10000;
+    padding: 20px;
 }
 
 .modal-overlay {
@@ -962,18 +904,32 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
     position: relative;
     background: white;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 40px;
     text-align: center;
     max-width: 500px;
+    width: 100%;
     z-index: 1;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .success-icon {
@@ -990,7 +946,7 @@ body {
 }
 
 .modal-content h3 {
-    font-size: 24px;
+    font-size: 26px;
     margin-bottom: 10px;
     color: #333;
 }
@@ -1002,40 +958,42 @@ body {
 }
 
 .booking-ref {
-    background: #f5f5f5;
-    padding: 16px;
-    border-radius: 4px;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
     margin-bottom: 24px;
     font-size: 14px;
-    color: #333;
 }
 
 .booking-ref strong {
     display: block;
-    margin-bottom: 4px;
+    margin-bottom: 8px;
     font-size: 12px;
     color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .btn-primary, .btn-secondary {
     width: 100%;
     padding: 14px;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
     margin-bottom: 12px;
     font-size: 14px;
-    transition: all 0.2s;
+    transition: all 0.3s;
 }
 
 .btn-primary {
-    background: #0066cc;
+    background: #4A90E2;
     color: white;
 }
 
 .btn-primary:hover {
-    background: #0052a3;
+    background: #357ABD;
+    transform: translateY(-1px);
 }
 
 .btn-secondary {
@@ -1045,7 +1003,7 @@ body {
 }
 
 .btn-secondary:hover {
-    background: #ebebeb;
+    background: #e0e0e0;
 }
 
 /* Notifications */
@@ -1054,26 +1012,32 @@ body {
     top: 20px;
     right: 20px;
     z-index: 10001;
+    max-width: 400px;
 }
 
 .notification {
     background: white;
     padding: 16px 20px;
-    border-radius: 4px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
     margin-bottom: 10px;
     display: flex;
     align-items: center;
     gap: 15px;
-    transform: translateX(400px);
+    transform: translateX(450px);
     opacity: 0;
     transition: all 0.3s;
     min-width: 300px;
 }
 
-.notification.show {
+.notification.notification-show {
     transform: translateX(0);
     opacity: 1;
+}
+
+.notification.notification-hide {
+    transform: translateX(450px);
+    opacity: 0;
 }
 
 .notification.error {
@@ -1084,7 +1048,21 @@ body {
     border-left: 4px solid #28a745;
 }
 
-.notification button {
+.notification.info {
+    border-left: 4px solid #17a2b8;
+}
+
+.notification-icon svg {
+    display: block;
+}
+
+.notification-message {
+    flex: 1;
+    color: #333;
+    font-size: 14px;
+}
+
+.notification-close {
     background: none;
     border: none;
     font-size: 20px;
@@ -1092,9 +1070,11 @@ body {
     color: #999;
     padding: 0;
     line-height: 1;
+    width: 24px;
+    height: 24px;
 }
 
-.notification button:hover {
+.notification-close:hover {
     color: #666;
 }
 
@@ -1104,12 +1084,8 @@ body {
         grid-template-columns: 1fr;
     }
     
-    .payment-main {
-        border-right: none;
-    }
-    
     .payment-sidebar {
-        border-top: 1px solid #e5e5e5;
+        order: -1;
     }
 }
 
@@ -1123,7 +1099,7 @@ body {
     }
     
     .cinema-logo h2 {
-        font-size: 24px;
+        font-size: 20px;
     }
     
     .progress-steps {
@@ -1131,14 +1107,43 @@ body {
         padding: 20px;
     }
     
+    .payment-container {
+        padding: 15px;
+    }
+    
     .section-header,
-    .section-content,
-    .pricing-section .section-content {
+    .section-content {
         padding: 20px;
     }
     
-    .payment-sidebar {
-        padding: 20px;
+    .payment-method-selector {
+        grid-template-columns: 1fr;
+    }
+    
+    .notifications-container {
+        left: 20px;
+        right: 20px;
+        max-width: none;
+    }
+    
+    .notification {
+        min-width: auto;
+    }
+}
+
+@media (max-width: 480px) {
+    .progress-steps {
+        gap: 20px;
+    }
+    
+    .step-label {
+        font-size: 12px;
+    }
+    
+    .step-number {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
     }
 }
 </style>

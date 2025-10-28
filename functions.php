@@ -1301,6 +1301,7 @@ function cinema_clear_cart_ajax() {
  * ENQUEUE SCRIPTS WITH MULTI-SCREEN SUPPORT
  * ========================================================================
  */
+// Update the existing cinema_enqueue_scripts function
 function cinema_enqueue_scripts() {
     // CSS
     wp_enqueue_style('cinema-style', get_stylesheet_directory_uri() . '/cinema-style.css');
@@ -1328,33 +1329,62 @@ function cinema_enqueue_scripts() {
         wp_enqueue_script('cinema-cart', get_stylesheet_directory_uri() . '/js/cinema-cart.js', array('jquery', 'cinema-common'), '1.0', true);
     }
     
-    // Payment page
+    // Payment page - UPDATED for dual gateway support
     if (is_page_template('page-payment.php')) {
-        wp_enqueue_script('cinema-payment', get_stylesheet_directory_uri() . '/js/cinema-payment.js', array('jquery', 'cinema-common'), '1.0', true);
+        // Load Stripe SDK
+        wp_enqueue_script('stripe-js', 'https://js.stripe.com/v3/', array(), null, false);
+        
+        // Load Square SDK
+        $square_environment = SQUARE_ENVIRONMENT === 'production' ? 'web' : 'sandbox.web';
+        wp_enqueue_script('square-js', "https://{$square_environment}.squarecdn.com/v1/square.js", array(), null, false);
+        
+        // Load payment script
+        wp_enqueue_script('cinema-payment', get_stylesheet_directory_uri() . '/js/cinema-payment.js', array('jquery', 'cinema-common', 'stripe-js', 'square-js'), '2.0', true);
+        
+        // Localize Stripe credentials
+        wp_localize_script('cinema-payment', 'cinema_stripe', array(
+            'publishable_key' => STRIPE_PUBLISHABLE_KEY
+        ));
+        
+        // Localize Square credentials
+        wp_localize_script('cinema-payment', 'cinema_square', array(
+            'application_id' => SQUARE_APPLICATION_ID,
+            'location_id' => SQUARE_LOCATION_ID,
+            'environment' => SQUARE_ENVIRONMENT
+        ));
+        
+        // Localize user data
+        if (is_user_logged_in()) {
+            $current_user = wp_get_current_user();
+            wp_localize_script('cinema-payment', 'cinema_user', array(
+                'name' => $current_user->display_name,
+                'email' => $current_user->user_email,
+                'id' => $current_user->ID
+            ));
+        }
+        
+        // Localize cart data from session
+        if (!session_id()) {
+            session_start();
+        }
+        if (isset($_SESSION['cinema_cart']) && !empty($_SESSION['cinema_cart']['items'])) {
+            wp_localize_script('cinema-payment', 'cinema_cart_items', $_SESSION['cinema_cart']['items']);
+        }
     }
     
-    // Localize script
+    // Localize common script data
     wp_localize_script('cinema-common', 'cinema_ajax', array(
         'ajax_url' => admin_url('admin-ajax.php'),
         'nonce' => wp_create_nonce('cinema_nonce'),
         'is_logged_in' => is_user_logged_in(),
         'login_url' => home_url('/login/'),
-        // include site base so JS can build absolute URLs correctly (supports subdirectory installs)
         'site_url' => untrailingslashit(home_url())
     ));
 }
+// Make sure this is hooked properly
 add_action('wp_enqueue_scripts', 'cinema_enqueue_scripts');
 
-/**
- * ========================================================================
- * STRIPE CONFIGURATION
- * ========================================================================
- */
-define('STRIPE_PUBLISHABLE_KEY', 'STRIPE_PUBLISHABLE_KEY');
-define('STRIPE_SECRET_KEY', 'STRIPE_SECRET_KEY');
-define('STRIPE_WEBHOOK_SECRET', 'STRIPE_WEBHOOK_KEY');
 //stripe configuration
-
 
 require_once get_stylesheet_directory() . '/includes/vendor/autoload.php';
 \Stripe\Stripe::setApiKey(STRIPE_SECRET_KEY);
@@ -2454,3 +2484,492 @@ function cinema_get_event_bookings($user_id) {
  * 4. Bookings are tracked per screen
  * 
  */
+
+/**
+ * Square Payment Gateway Configuration
+ * Add this to your functions.php file AFTER the Stripe configuration
+ */
+
+// ========================================================================
+// SQUARE CONFIGURATION CONSTANTS
+// ========================================================================
+define('SQUARE_ENVIRONMENT', 'sandbox'); // 'sandbox' or 'production'
+define('SQUARE_APPLICATION_ID', 'sandbox-sq0idb-ZeFjROdOW5taotI5wxWYjw'); 
+define('SQUARE_ACCESS_TOKEN', 'EAAAl3yb3rEFAVtFkU5vvTY0VqpaH4Tlln9QMa467c59rZjp9G070z6NmS0iCgZ-'); 
+define('SQUARE_LOCATION_ID', 'LAGRDVB7TG9V9'); 
+define('SQUARE_WEBHOOK_SECRET', ''); // Optional
+
+/**
+ * Update database schema for Square
+ */
+function cinema_update_bookings_table_for_square() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'cinema_bookings';
+    
+    $columns_to_add = array(
+        'square_payment_id' => "ALTER TABLE $table ADD COLUMN square_payment_id VARCHAR(100) NULL AFTER stripe_charge_id",
+        'receipt_url' => "ALTER TABLE $table ADD COLUMN receipt_url VARCHAR(255) NULL AFTER square_payment_id"
+    );
+    
+    foreach ($columns_to_add as $column => $sql) {
+        $column_exists = $wpdb->get_results("SHOW COLUMNS FROM $table LIKE '$column'");
+        if (empty($column_exists)) {
+            $wpdb->query($sql);
+        }
+    }
+}
+add_action('after_switch_theme', 'cinema_update_bookings_table_for_square');
+add_action('admin_init', 'cinema_update_bookings_table_for_square');
+
+
+/**
+ * Include Square Payment Class
+ */
+require_once get_stylesheet_directory() . '/includes/class-cinema-square-payment.php';
+
+/**
+ * Square refund support
+ */
+add_filter('cinema_process_refund', 'cinema_process_square_refund', 10, 2);
+function cinema_process_square_refund($result, $booking) {
+    if ($booking->payment_method === 'square' && !empty($booking->square_payment_id)) {
+        $square_payment = new Cinema_Square_Payment();
+        return $square_payment->cancel_payment($booking->square_payment_id);
+    }
+    return $result;
+}
+
+/**
+ * Admin notice for Square setup
+ */
+add_action('admin_notices', 'cinema_square_setup_notice');
+function cinema_square_setup_notice() {
+    if (SQUARE_APPLICATION_ID === 'YOUR_SQUARE_APPLICATION_ID') {
+        echo '<div class="notice notice-warning is-dismissible">';
+        echo '<p><strong>Square Payment:</strong> Please configure Square credentials in functions.php</p>';
+        echo '</div>';
+    }
+}
+
+// ========================================================================
+// ADMIN COLUMNS
+// ========================================================================
+add_filter('manage_edit-cinema_bookings_columns', 'cinema_add_payment_method_column');
+function cinema_add_payment_method_column($columns) {
+    $new_columns = array();
+    foreach ($columns as $key => $value) {
+        $new_columns[$key] = $value;
+        if ($key === 'payment_status') {
+            $new_columns['payment_method'] = 'Payment Method';
+        }
+    }
+    return $new_columns;
+}
+
+add_action('manage_cinema_bookings_posts_custom_column', 'cinema_display_payment_method_column', 10, 2);
+function cinema_display_payment_method_column($column, $booking_id) {
+    if ($column === 'payment_method') {
+        global $wpdb;
+        $table = $wpdb->prefix . 'cinema_bookings';
+        $booking = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $booking_id));
+        
+        if ($booking && $booking->payment_method) {
+            $method = ucfirst($booking->payment_method);
+            $badge_class = $booking->payment_method === 'stripe' ? 'stripe-badge' : 'square-badge';
+            echo '<span class="payment-method-badge ' . esc_attr($badge_class) . '">' . esc_html($method) . '</span>';
+        } else {
+            echo '<span style="color: #999;">N/A</span>';
+        }
+    }
+}
+
+add_action('admin_head', 'cinema_payment_method_styles');
+function cinema_payment_method_styles() {
+    echo '<style>
+        .payment-method-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .stripe-badge {
+            background: #635bff;
+            color: white;
+        }
+        .square-badge {
+            background: #00a55f;
+            color: white;
+        }
+    </style>';
+}
+
+/**
+ * Enqueue Square SDK
+ */
+add_action('wp_enqueue_scripts', 'cinema_enqueue_square_sdk');
+function cinema_enqueue_square_sdk() {
+    if (is_page_template('page-payment.php')) {
+        $environment = SQUARE_ENVIRONMENT === 'production' ? 'web' : 'sandbox.web';
+        wp_enqueue_script(
+            'square-sdk',
+            "https://{$environment}.squarecdn.com/v1/square.js",
+            array(),
+            null,
+            true
+        );
+        
+        wp_localize_script('cinema-common', 'cinema_square', array(
+            'application_id' => SQUARE_APPLICATION_ID,
+            'location_id' => SQUARE_LOCATION_ID,
+            'environment' => SQUARE_ENVIRONMENT
+        ));
+    }
+}
+
+// ========================================================================
+// BOOKING DETAILS DISPLAY
+// ========================================================================
+add_filter('cinema_booking_payment_details', 'cinema_add_square_payment_details', 10, 2);
+function cinema_add_square_payment_details($details, $booking) {
+    if ($booking->payment_method === 'square') {
+        $details['payment_gateway'] = 'Square';
+        if (!empty($booking->receipt_url)) {
+            $details['receipt_link'] = '<a href="' . esc_url($booking->receipt_url) . '" target="_blank">View Receipt</a>';
+        }
+    }
+    return $details;
+}
+
+// ========================================================================
+// PAYMENT METHOD VALIDATION
+// ========================================================================
+add_filter('cinema_validate_booking_data', 'cinema_validate_payment_method', 10, 2);
+function cinema_validate_payment_method($is_valid, $data) {
+    if (isset($data['payment_method'])) {
+        $allowed_methods = array('stripe', 'square');
+        if (!in_array($data['payment_method'], $allowed_methods)) {
+            return new WP_Error('invalid_payment_method', 'Invalid payment method selected');
+        }
+    }
+    return $is_valid;
+}
+
+/**
+ * Payment statistics dashboard widget
+ */
+add_action('wp_dashboard_setup', 'cinema_add_payment_stats_widget');
+function cinema_add_payment_stats_widget() {
+    if (current_user_can('manage_options')) {
+        wp_add_dashboard_widget(
+            'cinema_payment_stats',
+            'Cinema Payment Statistics',
+            'cinema_display_payment_stats'
+        );
+    }
+}
+
+function cinema_display_payment_stats() {
+    global $wpdb;
+    $table = $wpdb->prefix . 'cinema_bookings';
+    
+    $stats = $wpdb->get_results("
+        SELECT 
+            payment_method,
+            COUNT(*) as count,
+            SUM(total_amount) as total
+        FROM $table 
+        WHERE payment_status = 'paid'
+        AND booking_status = 'confirmed'
+        GROUP BY payment_method
+    ");
+    
+    echo '<div style="padding: 10px;">';
+    echo '<table style="width: 100%; border-collapse: collapse;">';
+    echo '<tr style="border-bottom: 1px solid #ddd;">
+            <th style="text-align: left; padding: 8px;">Payment Method</th>
+            <th style="text-align: center; padding: 8px;">Bookings</th>
+            <th style="text-align: right; padding: 8px;">Revenue</th>
+          </tr>';
+    
+    $total_bookings = 0;
+    $total_revenue = 0;
+    
+    foreach ($stats as $stat) {
+        $method = ucfirst($stat->payment_method ?: 'Unknown');
+        $count = intval($stat->count);
+        $revenue = floatval($stat->total);
+        
+        $total_bookings += $count;
+        $total_revenue += $revenue;
+        
+        echo '<tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px;">' . esc_html($method) . '</td>
+                <td style="text-align: center; padding: 8px;">' . $count . '</td>
+                <td style="text-align: right; padding: 8px;">$' . number_format($revenue, 2) . '</td>
+              </tr>';
+    }
+    
+    echo '<tr style="font-weight: bold; background: #f5f5f5;">
+            <td style="padding: 8px;">Total</td>
+            <td style="text-align: center; padding: 8px;">' . $total_bookings . '</td>
+            <td style="text-align: right; padding: 8px;">$' . number_format($total_revenue, 2) . '</td>
+          </tr>';
+    echo '</table>';
+    echo '</div>';
+}
+// ========================================================================
+// EXPORT BOOKINGS WITH PAYMENT METHOD
+// ========================================================================
+add_action('admin_post_cinema_export_bookings', 'cinema_export_bookings_with_payment');
+function cinema_export_bookings_with_payment() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Unauthorized');
+    }
+    
+    check_admin_referer('cinema_export_bookings');
+    
+    global $wpdb;
+    $table = $wpdb->prefix . 'cinema_bookings';
+    
+    $bookings = $wpdb->get_results("
+        SELECT 
+            booking_reference,
+            customer_name,
+            customer_email,
+            show_date,
+            show_time,
+            total_amount,
+            payment_method,
+            payment_status,
+            booking_status,
+            created_at
+        FROM $table
+        ORDER BY created_at DESC
+    ");
+    
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="cinema-bookings-' . date('Y-m-d') . '.csv"');
+    
+    $output = fopen('php://output', 'w');
+    
+    // Headers
+    fputcsv($output, array(
+        'Booking Reference',
+        'Customer Name',
+        'Email',
+        'Show Date',
+        'Show Time',
+        'Total Amount',
+        'Payment Method',
+        'Payment Status',
+        'Booking Status',
+        'Created At'
+    ));
+    
+    // Data
+    foreach ($bookings as $booking) {
+        fputcsv($output, array(
+            $booking->booking_reference,
+            $booking->customer_name,
+            $booking->customer_email,
+            $booking->show_date,
+            $booking->show_time,
+            '$' . number_format($booking->total_amount, 2),
+            ucfirst($booking->payment_method ?: 'N/A'),
+            ucfirst($booking->payment_status),
+            ucfirst($booking->booking_status),
+            $booking->created_at
+        ));
+    }
+    
+    fclose($output);
+    exit;
+}
+
+// ========================================================================
+// ADMIN MENU PAGES
+// ========================================================================
+add_action('admin_menu', 'cinema_add_payment_admin_pages');
+function cinema_add_payment_admin_pages() {
+    add_submenu_page(
+        'cinema-bookings',
+        'Export Bookings',
+        'Export',
+        'manage_options',
+        'cinema-export',
+        'cinema_export_page_content'
+    );
+    
+    add_submenu_page(
+        'cinema-bookings',
+        'Payment Settings',
+        'Payment Settings',
+        'manage_options',
+        'cinema-payment-settings',
+        'cinema_payment_settings_content'
+    );
+}
+
+function cinema_export_page_content() {
+    ?>
+    <div class="wrap">
+        <h1>Export Bookings</h1>
+        <p>Export all bookings with payment information to CSV format.</p>
+        <form method="post" action="<?php echo admin_url('admin-post.php'); ?>">
+            <input type="hidden" name="action" value="cinema_export_bookings">
+            <?php wp_nonce_field('cinema_export_bookings'); ?>
+            <p>
+                <button type="submit" class="button button-primary">
+                    Download CSV Export
+                </button>
+            </p>
+        </form>
+    </div>
+    <?php
+}
+
+function cinema_payment_settings_content() {
+    if (isset($_POST['cinema_save_payment_settings'])) {
+        check_admin_referer('cinema_payment_settings');
+        
+        update_option('cinema_stripe_enabled', isset($_POST['stripe_enabled']) ? 1 : 0);
+        update_option('cinema_square_enabled', isset($_POST['square_enabled']) ? 1 : 0);
+        update_option('cinema_default_payment_method', sanitize_text_field($_POST['default_payment_method']));
+        
+        echo '<div class="notice notice-success"><p>Payment settings saved successfully!</p></div>';
+    }
+    
+    $stripe_enabled = get_option('cinema_stripe_enabled', 1);
+    $square_enabled = get_option('cinema_square_enabled', 1);
+    $default_method = get_option('cinema_default_payment_method', 'stripe');
+    ?>
+    <div class="wrap">
+        <h1>Payment Gateway Settings</h1>
+        
+        <form method="post" action="">
+            <?php wp_nonce_field('cinema_payment_settings'); ?>
+            
+            <table class="form-table">
+                <tr>
+                    <th scope="row">Enable Stripe</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="stripe_enabled" value="1" <?php checked($stripe_enabled, 1); ?>>
+                            Allow payments via Stripe
+                        </label>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <th scope="row">Enable Square</th>
+                    <td>
+                        <label>
+                            <input type="checkbox" name="square_enabled" value="1" <?php checked($square_enabled, 1); ?>>
+                            Allow payments via Square
+                        </label>
+                    </td>
+                </tr>
+                
+                <tr>
+                    <th scope="row">Default Payment Method</th>
+                    <td>
+                        <select name="default_payment_method">
+                            <option value="stripe" <?php selected($default_method, 'stripe'); ?>>Stripe</option>
+                            <option value="square" <?php selected($default_method, 'square'); ?>>Square</option>
+                        </select>
+                    </td>
+                </tr>
+            </table>
+            
+            <h2>Current Configuration</h2>
+            <table class="form-table">
+                <tr>
+                    <th>Stripe Status</th>
+                    <td>
+                        <?php
+                        $stripe_configured = (defined('STRIPE_PUBLISHABLE_KEY') && STRIPE_PUBLISHABLE_KEY !== 'STRIPE_PUBLISHABLE_KEY');
+                        echo $stripe_configured ? 
+                            '<span style="color: green;">✓ Configured</span>' : 
+                            '<span style="color: red;">✗ Not Configured</span>';
+                        ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Square Status</th>
+                    <td>
+                        <?php
+                        $square_configured = (SQUARE_APPLICATION_ID !== 'YOUR_SQUARE_APPLICATION_ID');
+                        echo $square_configured ? 
+                            '<span style="color: green;">✓ Configured</span>' : 
+                            '<span style="color: red;">✗ Not Configured</span>';
+                        ?>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Square Environment</th>
+                    <td><?php echo esc_html(strtoupper(SQUARE_ENVIRONMENT)); ?></td>
+                </tr>
+            </table>
+            
+            <?php submit_button('Save Payment Settings', 'primary', 'cinema_save_payment_settings'); ?>
+        </form>
+        
+        <hr>
+        
+        <h2>Configuration Instructions</h2>
+        
+        <h3>Stripe Setup</h3>
+        <ol>
+            <li>Go to <a href="https://dashboard.stripe.com/register" target="_blank">Stripe Dashboard</a></li>
+            <li>Get your API keys from Developers → API keys</li>
+            <li>Update constants in functions.php</li>
+        </ol>
+        
+        <h3>Square Setup</h3>
+        <ol>
+            <li>Go to <a href="https://developer.squareup.com/apps" target="_blank">Square Developer Dashboard</a></li>
+            <li>Create a new application or select existing one</li>
+            <li>Get credentials from your application</li>
+            <li>Configure webhooks: <code><?php echo home_url('/wp-json/cinema/v1/square-webhook'); ?></code></li>
+        </ol>
+        
+        <h3>Testing</h3>
+        <p><strong>Stripe Test Cards:</strong> 4242 4242 4242 4242</p>
+        <p><strong>Square Test Cards:</strong> 4111 1111 1111 1111 (CVV: 111, Postal: 12345)</p>
+    </div>
+    <?php
+}
+
+// ========================================================================
+// FILTER PAYMENT METHODS
+// ========================================================================
+add_filter('cinema_available_payment_methods', 'cinema_filter_payment_methods');
+function cinema_filter_payment_methods($methods) {
+    $stripe_enabled = get_option('cinema_stripe_enabled', 1);
+    $square_enabled = get_option('cinema_square_enabled', 1);
+    
+    $available = array();
+    
+    if ($stripe_enabled && defined('STRIPE_PUBLISHABLE_KEY') && STRIPE_PUBLISHABLE_KEY !== 'STRIPE_PUBLISHABLE_KEY') {
+        $available[] = 'stripe';
+    }
+    
+    if ($square_enabled && SQUARE_APPLICATION_ID !== 'YOUR_SQUARE_APPLICATION_ID') {
+        $available[] = 'square';
+    }
+    
+    return $available;
+}
+
+// ========================================================================
+// GET DEFAULT PAYMENT METHOD
+// ========================================================================
+function cinema_get_default_payment_method() {
+    $default = get_option('cinema_default_payment_method', 'stripe');
+    $available = apply_filters('cinema_available_payment_methods', array('stripe', 'square'));
+    
+    return !empty($available) && in_array($default, $available) ? $default : (isset($available[0]) ? $available[0] : 'stripe');
+}
+
